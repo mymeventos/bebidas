@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Registro de Consumos</title>
+  <!-- Favicon personalizado con la URL proporcionada -->
+  <link rel="icon" href="https://mymeventos.github.io/bebidas/mi-icono.png" type="image/png">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    body { background-color: #f0f2f5; padding: 30px; font-family: 'Segoe UI', Tahoma; color: #333; transition: background-color 0.5s ease; }
+    .container { background: #fff; padding: 35px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+    .card { border: none; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 30px; }
+    .card-header { background-color: #007bff; color: white; font-weight: bold; border-radius: 10px 10px 0 0; padding: 15px 20px; font-size: 1.2rem; }
+    .form-label { font-weight: bold; color: #555; }
+    .table input[type="number"] { width: 90px; text-align: center; }
+    .btn-primary:hover, .btn-secondary:hover { transform: translateY(-2px); }
+    .stock-item { background: #e6f2ff; border: 1px solid #cce0ff; border: 1px solid #cce0ff; border-radius: 8px; padding: 10px 15px; text-align: center; min-width: 120px; max-width: 200px; flex: 1 1 auto; }
+    .stock-item strong { display: block; font-size: 1.1em; color: #0056b3; }
+    .stock-item span { font-size: 1.3em; font-weight: bold; color: #007bff; }
+    /* Estilos para la tabla de movimientos */
+    .table thead th { background-color: #495057; color: white; }
+    .table tbody tr:hover { background-color: #f5f5f5; }
+    .table-responsive { overflow-x: auto; }
+    /* Estilo para el total general */
+    .total-general-row {
+      font-weight: bold;
+      background-color: #e9ecef; /* Un color de fondo ligeramente diferente */
+    }
+    .total-general-row td {
+      padding: 0.75rem;
+      border-top: 2px solid #dee2e6;
+    }
+    #authContainer {
+      max-width: 400px;
+      margin: 50px auto;
+      padding: 30px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+    /* Estilos para la alerta más grande y visible */
+    .alert-big {
+      font-size: 1.5rem; /* Tamaño de fuente más grande */
+      padding: 1.5rem; /* Más padding */
+      text-align: center;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    /* Clase para el fondo verde de éxito */
+    .bg-success-flash {
+      background-color: #d4edda !important; /* Un verde suave */
+    }
+  </style>
+</head>
+<body>
+<div id="appContent" style="display: none;">
+  <div class="container bg-white p-4 rounded shadow">
+    <h1 class="text-center mb-4">🍷 Registro de Consumos</h1>
+    <p class="text-muted text-center" id="currentUserIdDisplay">Cargando ID de usuario...</p>
+    <div class="text-center mb-3">
+      <button id="logoutBtn" class="btn btn-outline-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+    </div>
+
+    <form id="formConsumo">
+      <div class="row g-3 mb-3">
+        <div class="col-md-4"><label class="form-label">Fecha</label><input type="date" class="form-control" id="fecha" required /></div>
+        <div class="col-md-5"><label class="form-label">Evento</label><input type="text" class="form-control" id="evento" /></div>
+        <div class="col-md-3"><label class="form-label">Encargado</label><input type="text" class="form-control" id="usuario" /></div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-bordered text-center align-middle">
+          <thead><tr><th>Bebida</th><th>Cantidad</th></tr></thead>
+          <tbody id="tablaConsumo"></tbody>
+        </table>
+      </div>
+
+      <!-- Alerta de mensajes - Posición y tamaño mejorados -->
+      <div id="alerta" class="alert d-none alert-big"></div>
+
+      <button type="submit" class="btn btn-danger w-100 mt-3">Registrar</button>
+    </form>
+  </div>
+</div>
+
+<div id="authContainer">
+  <h2 class="text-center mb-4">Iniciar Sesión / Registrarse</h2>
+  <div class="mb-3">
+    <label for="emailInput" class="form-label">Email</label>
+    <input type="email" class="form-control" id="emailInput" placeholder="tu@email.com" required>
+  </div>
+  <div class="mb-3">
+    <label for="passwordInput" class="form-label">Contraseña</label>
+    <input type="password" class="form-control" id="passwordInput" placeholder="********" required>
+  </div>
+  <div class="d-grid gap-2">
+    <button id="signInBtn" class="btn btn-primary">Iniciar Sesión</button>
+    <button id="signUpBtn" class="btn btn-secondary">Registrarse</button>
+  </div>
+  <div id="authAlerta" class="alert d-none mt-3"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
+<script type="module">
+  // Importaciones de Firebase SDK
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+  // Variables globales proporcionadas por el entorno de Canvas (se mantienen por si se usan en otros contextos)
+  const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+  // Configuración de Firebase: Usamos directamente la configuración de tu proyecto
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfYVuYB0azsjXohRlpt47rvIJWX31YnVg",
+    authDomain: "bebidas-f2e09.firebaseapp.com",
+    projectId: "bebidas-f2e09",
+    storageBucket: "bebidas-f2e09.firebasestorage.app",
+    messagingSenderId: "3759804003",
+    appId: "1:3759804003:web:a6fc813d925c681c597256",
+    measurementId: "G-JZQG7XKRJC"
+  };
+  const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+  // Inicialización de Firebase
+  let app;
+  let db;
+  let auth;
+  let userId = null; // Para almacenar el ID del usuario autenticado
+
+  // Lista de bebidas disponibles
+  const bebidas = ["Coca","Coca Zero","Sprite","Sprite Zero","Fanta","Fanta Zero","Agua","Agua Tónica","Soda","Vino Tinto","Vino Blanco","Champagne","Sidra","Cerveza","Cerveza sin Alcohol"];
+
+  // Referencias a elementos del DOM de la aplicación principal
+  const appContent = document.getElementById("appContent");
+  const tbody = document.getElementById("tablaConsumo");
+  const alerta = document.getElementById("alerta");
+  const currentUserIdDisplay = document.getElementById("currentUserIdDisplay"); 
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  // Referencias a elementos del DOM de autenticación
+  const authContainer = document.getElementById("authContainer");
+  const emailInput = document.getElementById("emailInput");
+  const passwordInput = document.getElementById("passwordInput");
+  const signInBtn = document.getElementById("signInBtn");
+  const signUpBtn = document.getElementById("signUpBtn");
+  const authAlerta = document.getElementById("authAlerta");
+
+
+  /**
+   * Muestra una alerta temporal.
+   * @param {string} msg - El mensaje a mostrar.
+   * @param {string} tipo - El tipo de alerta (ej. "success", "warning", "danger").
+   * @param {HTMLElement} targetAlerta - El elemento de alerta donde mostrar el mensaje.
+   */
+  function mostrarAlerta(msg, tipo, targetAlerta = alerta) {
+    targetAlerta.textContent = msg;
+    targetAlerta.className = `alert alert-${tipo} alert-big`; 
+    targetAlerta.classList.remove("d-none");
+    
+    // Si es un mensaje de éxito, cambia el fondo de la pantalla
+    if (tipo === "success") {
+      document.body.classList.add("bg-success-flash");
+    }
+
+    setTimeout(() => {
+      targetAlerta.classList.add("d-none");
+      // Quita la clase de fondo verde después de que la alerta desaparezca
+      document.body.classList.remove("bg-success-flash");
+    }, 4000);
+  }
+
+  /**
+   * Inicializa Firebase y configura el listener de autenticación.
+   */
+  async function initFirebase() {
+    try {
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      auth = getAuth(app);
+
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          userId = user.uid;
+          console.log("Usuario autenticado:", userId);
+          currentUserIdDisplay.textContent = `ID de Usuario: ${userId}`;
+          appContent.style.display = 'block'; // Muestra el contenido de la aplicación
+          authContainer.style.display = 'none'; // Oculta el formulario de autenticación
+          generarFilas(); // Genera las filas de consumo una vez autenticado
+        } else {
+          userId = null;
+          console.log("No hay usuario autenticado.");
+          currentUserIdDisplay.textContent = `ID de Usuario: No autenticado`;
+          appContent.style.display = 'none'; // Oculta el contenido de la aplicación
+          authContainer.style.display = 'block'; // Muestra el formulario de autenticación
+        }
+      });
+    } catch (error) {
+      console.error("Error al inicializar Firebase:", error);
+      mostrarAlerta("Error al inicializar la aplicación. Verifique la configuración.", "danger", authAlerta);
+    }
+  }
+
+  /**
+   * Maneja el registro de un nuevo usuario con email y contraseña.
+   */
+  signUpBtn.addEventListener('click', async () => {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    if (!email || !password) {
+      mostrarAlerta("Por favor, ingrese email y contraseña.", "warning", authAlerta);
+      return;
+    }
+
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      mostrarAlerta("¡Registro exitoso! Sesión iniciada.", "success", authAlerta);
+      // onAuthStateChanged manejará la visualización de la app
+    } catch (error) {
+      console.error("Error al registrarse:", error);
+      mostrarAlerta(`Error al registrarse: ${error.message}`, "danger", authAlerta);
+    }
+  });
+
+  /**
+   * Maneja el inicio de sesión de un usuario existente con email y contraseña.
+   */
+  signInBtn.addEventListener('click', async () => {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    if (!email || !password) {
+      mostrarAlerta("Por favor, ingrese email y contraseña.", "warning", authAlerta);
+      return;
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      mostrarAlerta("¡Inicio de sesión exitoso!", "success", authAlerta);
+      // onAuthStateChanged manejará la visualización de la app
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error);
+      mostrarAlerta(`Error al iniciar sesión: ${error.message}`, "danger", authAlerta);
+    }
+  });
+
+  /**
+   * Maneja el cierre de sesión del usuario.
+   */
+  logoutBtn.addEventListener('click', async () => {
+    try {
+      await signOut(auth);
+      mostrarAlerta("Sesión cerrada correctamente.", "info", alerta);
+      // onAuthStateChanged manejará la visualización del formulario de autenticación
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      mostrarAlerta(`Error al cerrar sesión: ${error.message}`, "danger", alerta);
+    }
+  });
+
+
+  /**
+   * Genera dinámicamente las filas de la tabla de consumo con campos de entrada para cada bebida.
+   */
+  function generarFilas() {
+    tbody.innerHTML = ""; // Limpia el contenido actual de la tabla
+    bebidas.forEach(b => {
+      tbody.innerHTML += `<tr>
+        <td>${b}</td>
+        <td><input type="number" class="form-control cantidad" data-bebida="${b}" min="0" value="0" /></td>
+      </tr>`;
+    });
+  }
+
+  // Añade un event listener al formulario para manejar el envío
+  document.getElementById("formConsumo").addEventListener("submit", async e => {
+    e.preventDefault(); // Previene el envío por defecto del formulario
+
+    if (!db || !userId) {
+      mostrarAlerta("La aplicación no está lista o el usuario no está autenticado. Intente de nuevo.", "warning");
+      return;
+    }
+
+    // Obtiene los valores de los campos del formulario
+    const fecha = document.getElementById("fecha").value;
+    const evento = document.getElementById("evento").value;
+    const usuario = document.getElementById("usuario").value; // Encargado
+
+    const cantidades = document.querySelectorAll(".cantidad"); // Selecciona todos los campos de cantidad
+    let registros = []; // Array para almacenar los registros a enviar
+
+    // Itera sobre los campos de cantidad para recopilar los datos
+    cantidades.forEach(input => {
+      const cantidad = parseInt(input.value);
+      // Solo añade el registro si la cantidad es un número válido y mayor que 0
+      if (!isNaN(cantidad) && cantidad > 0) {
+        registros.push({
+          tipo: "consumo", // Tipo de movimiento fijo para este formulario
+          fecha,
+          bebida: input.dataset.bebida, // Obtiene el nombre de la bebida del atributo data-bebida
+          cantidad,
+          evento,
+          usuario,
+          timestamp: serverTimestamp() // Añade una marca de tiempo del servidor para ordenar
+        });
+      }
+    });
+
+    // Si no se ingresó ninguna bebida, muestra una alerta y detiene la ejecución
+    if (registros.length === 0) {
+      mostrarAlerta("Debe ingresar al menos una bebida", "warning");
+      return;
+    }
+
+    try {
+      // Referencia a la colección donde se guardarán los movimientos
+      // Usamos una colección anidada para datos privados del usuario dentro de la estructura de Canvas
+      const movimientosCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/movimientos`);
+
+      // Envía todos los registros a Firestore en paralelo
+      await Promise.all(registros.map(dato => addDoc(movimientosCollectionRef, dato)));
+
+      mostrarAlerta("¡Registro exitoso!", "success"); // Muestra mensaje de éxito
+      document.getElementById("formConsumo").reset(); // Limpia el formulario
+      generarFilas(); // Vuelve a generar las filas de la tabla
+    } catch (error) {
+      // Captura cualquier error en la escritura a Firestore
+      console.error("Error al registrar en Firestore:", error);
+      mostrarAlerta("Error al registrar: " + error.message, "danger"); // Muestra mensaje de error
+    }
+  });
+
+  // Se ejecuta cuando el DOM ha sido completamente cargado
+  document.addEventListener("DOMContentLoaded", () => {
+    initFirebase(); // Inicializa Firebase al cargar la página
+    // Establece la fecha actual en el campo de fecha
+    document.getElementById("fecha").valueAsDate = new Date();
+  });
+</script>
+</body>
+</html>
