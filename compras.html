@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestión de Inventario de Bebidas</title>
+  <link rel="icon" href="https://mymeventos.github.io/bebidas/mi-icono.png" type="image/png">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <style>
+    body { background-color: #f0f2f5; padding: 30px; font-family: 'Segoe UI', Tahoma; color: #333; }
+    .container { background: #fff; padding: 35px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+    .card { border: none; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 30px; }
+    .card-header { background-color: #007bff; color: white; font-weight: bold; border-radius: 10px 10px 0 0; padding: 15px 20px; font-size: 1.2rem; }
+    .form-label { font-weight: bold; color: #555; }
+    .table input.cantidad-entero { width: 90px; text-align: center; }
+    .btn-primary:hover, .btn-secondary:hover { transform: translateY(-2px); }
+    .stock-item { background: #e6f2ff; border: 1px solid #cce0ff; border-radius: 8px; padding: 10px 15px; text-align: center; min-width: 120px; max-width: 200px; flex: 1 1 auto; }
+    .stock-item strong { display: block; font-size: 1.1em; color: #0056b3; }
+    .stock-item span { font-size: 1.3em; font-weight: bold; color: #007bff; }
+    /* Estilos para la tabla de movimientos */
+    .table thead th { background-color: #495057; color: white; }
+    .table tbody tr:hover { background-color: #f5f5f5; }
+    .table-responsive { overflow-x: auto; }
+    /* Estilo para el total general */
+    .total-general-row {
+      font-weight: bold;
+      background-color: #e9ecef;
+    }
+    .total-general-row td {
+      padding: 0.75rem;
+      border-top: 2px solid #dee2e6;
+    }
+    #authContainer {
+      max-width: 400px;
+      margin: 50px auto;
+      padding: 30px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+    /* Estilos para los botones de fracción */
+    .btn-secondary {
+      background-color: #f0f2f5;
+      color: #333;
+      border-color: #e0e0e0;
+    }
+    .btn-secondary:hover {
+      background-color: #e9ecef;
+      color: #333;
+      border-color: #ccc;
+    }
+    .btn-check:checked + .btn-secondary {
+      background-color: #0d6efd; /* Color azul de Bootstrap */
+      color: white;
+      border-color: #0d6efd;
+    }
+    .bebida-adulto {
+      background-color: #cccccc; /* Gris más oscuro y visible */
+    }
+    .medidas-container {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    .medida-item {
+      max-width: 100px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    .medida-item img {
+      width: 100%;
+      height: auto;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+<div id="appContent" style="display: none;">
+  <div class="container">
+    <h1 class="text-center mb-4"><i class="fas fa-warehouse"></i> Gestión de Inventario de Bebidas</h1>
+    <p class="text-muted text-center" id="currentUserIdDisplay">Cargando ID de usuario...</p>
+    <div class="text-center mb-3">
+      <button id="logoutBtn" class="btn btn-outline-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+    </div>
+
+    <div class="medidas-container">
+      <div class="medida-item">
+        <img src="https://mymeventos.github.io/bebidas/full-bottle.png" alt="Botella llena (1)">
+        <strong>1</strong>
+      </div>
+      <div class="medida-item">
+        <img src="https://mymeventos.github.io/bebidas/3-4-bottle.png" alt="Botella 3/4 llena">
+        <strong>3/4</strong>
+      </div>
+      <div class="medida-item">
+        <img src="https://mymeventos.github.io/bebidas/half-bottle.png" alt="Botella 1/2 llena">
+        <strong>1/2</strong>
+      </div>
+      <div class="medida-item">
+        <img src="https://mymeventos.github.io/bebidas/1-4-bottle.png" alt="Botella 1/4 llena">
+        <strong>1/4</strong>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header"><i class="fas fa-plus-circle"></i> Registrar Movimiento</div>
+      <div class="card-body">
+        <form id="registroForm">
+          <div class="row g-3 mb-3">
+            <div class="col-md-3"><label class="form-label">Tipo</label><select class="form-select" id="tipo"><option value="compra">Compra</option><option value="consumo">Consumo</option><option value="merma">Merma</option></select></div>
+            <div class="col-md-3"><label class="form-label">Fecha</label><input type="date" class="form-control" id="fecha" required /></div>
+            <div class="col-md-3"><label class="form-label">Evento</label><input type="text" class="form-control" id="evento" /></div>
+            <div class="col-md-3"><label class="form-label">Encargado</label><input type="text" class="form-control" id="usuario" /></div>
+          </div>
+
+          <table class="table table-bordered text-center align-middle">
+            <thead><tr><th>Bebida</th><th>Cantidad</th><th>Precio</th></tr></thead>
+            <tbody id="tablaBebidas"></tbody>
+          </table>
+
+          <button type="submit" class="btn btn-primary w-100">Registrar</button>
+          <div id="alerta" class="alert d-none mt-3"></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-chart-bar"></i> Stock Actual
+        <button class="btn btn-sm btn-light float-end" id="btnActualizarStock">Actualizar</button>
+      </div>
+      <div class="card-body d-flex flex-wrap gap-3 justify-content-center" id="stockContainer">
+        <p class="text-muted">Cargando stock...</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><i class="fas fa-filter"></i> Filtrar Movimientos</div>
+      <div class="card-body">
+        <div class="row g-3 mb-3">
+          <div class="col-md-3"><label class="form-label">Fecha</label><input type="date" class="form-control" id="filtroFecha" /></div>
+          <div class="col-md-3"><label class="form-label">Tipo</label><select class="form-select" id="filtroTipo"><option value="">Todos</option><option value="compra">Compra</option><option value="consumo">Consumo</option><option value="merma">Merma</option></select></div>
+          <div class="col-md-3"><label class="form-label">Evento</label><input type="text" class="form-control" id="filtroEvento" /></div>
+          <div class="col-md-3"><label class="form-label">Bebida</label><select class="form-select" id="filtroBebida"></select></div>
+        </div>
+        <div class="d-grid gap-2">
+          <button class="btn btn-secondary" id="btnAplicarFiltros">Aplicar Filtros</button>
+          <button class="btn btn-outline-secondary" id="btnLimpiarFiltros">Limpiar Filtros</button>
+        </div>
+        <div id="tablaRegistros" class="mt-4"><p class="text-muted text-center">Usa los filtros para ver movimientos anteriores.</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="authContainer">
+  <h2 class="text-center mb-4">Iniciar Sesión / Registrarse</h2>
+  <div class="mb-3">
+    <label for="emailInput" class="form-label">Email</label>
+    <input type="email" class="form-control" id="emailInput" placeholder="tu@email.com" required>
+  </div>
+  <div class="mb-3">
+    <label for="passwordInput" class="form-label">Contraseña</label>
+    <input type="password" class="form-control" id="passwordInput" placeholder="********" required>
+  </div>
+  <div class="d-grid gap-2">
+    <button id="signInBtn" class="btn btn-primary">Iniciar Sesión</button>
+    <button id="signUpBtn" class="btn btn-secondary">Registrarse</button>
+  </div>
+  <div id="authAlerta" class="alert d-none mt-3"></div>
+</div>
+
+
+<script type="module">
+  // Importaciones de Firebase SDK
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+  import { getFirestore, collection, addDoc, onSnapshot, query, where, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+  // Variables globales proporcionadas por el entorno de Canvas (se mantienen por si se usan en otros contextos)
+  const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+  // Configuración de Firebase: Usamos directamente la configuración de tu proyecto
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfYVuYB0azsjXohRlpt47rvIJWX31YnVg",
+    authDomain: "bebidas-f2e09.firebaseapp.com",
+    projectId: "bebidas-f2e09",
+    storageBucket: "bebidas-f2e09.firebasestorage.app",
+    messagingSenderId: "3759804003",
+    appId: "1:3759804003:web:a6fc813d925c681c597256",
+    measurementId: "G-JZQG7XKRJC"
+  };
+  const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+  // Inicialización de Firebase
+  let app;
+  let db;
+  let auth;
+  let userId = null; // Para almacenar el ID del usuario autenticado
+  let isAuthReady = false; // Bandera para saber cuándo la autenticación está lista
+
+  // Lista de bebidas disponibles
+  const bebidas = ["Coca","Coca Zero","Sprite","Sprite Zero","Fanta","Fanta Zero","Agua","Agua Tónica","Soda","Vino Tinto","Vino Blanco","Champagne","Sidra","Cerveza","Cerveza sin Alcohol","Rutini","Trumpeter","Nicasia","Nicasia Viognier","Tardio","Sidra sin alcohol","Anana fizz","Gancia","Ron","Ron especial","Carpano rosso","Campari","Vodka","Aperol","Piña colada","Licor de Frutilla","Licor de chocolate","Licor de menta","Blue Curacao","Gin","Fernet", "Whisky","Minerva","Jugo de naranja","Pulpa de frutilla","Pulpa de melon"];
+  
+  const bebidasAdulto = ["Vino Tinto", "Vino Blanco", "Champagne", "Sidra", "Cerveza", "Cerveza sin Alcohol", "Rutini", "Trumpeter", "Nicasia", "Nicasia Viognier", "Tardio", "Sidra sin alcohol", "Anana fizz", "Gancia", "Ron", "Ron especial", "Carpano rosso", "Campari", "Vodka", "Aperol", "Piña colada", "Licor de Frutilla", "Licor de chocolate", "Licor de menta", "Blue Curacao", "Gin", "Fernet", "Whisky"];
+
+
+  // Referencias a elementos del DOM de la aplicación principal
+  const appContent = document.getElementById("appContent");
+  const tbody = document.getElementById("tablaBebidas");
+  const stockContainer = document.getElementById("stockContainer");
+  const filtroBebidaSelect = document.getElementById("filtroBebida");
+  const alerta = document.getElementById("alerta");
+  const currentUserIdDisplay = document.getElementById("currentUserIdDisplay");
+
+  // Referencias a los botones de filtro y stock para añadir event listeners
+  const btnActualizarStock = document.getElementById("btnActualizarStock");
+  const btnAplicarFiltros = document.getElementById("btnAplicarFiltros");
+  const btnLimpiarFiltros = document.getElementById("btnLimpiarFiltros");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  // Referencias a elementos del DOM de autenticación
+  const authContainer = document.getElementById("authContainer");
+  const emailInput = document.getElementById("emailInput");
+  const passwordInput = document.getElementById("passwordInput");
+  const signInBtn = document.getElementById("signInBtn");
+  const signUpBtn = document.getElementById("signUpBtn");
+  const authAlerta = document.getElementById("authAlerta");
+
+
+  /**
+   * Muestra una alerta temporal en la parte inferior del formulario.
+   * @param {string} msg - El mensaje a mostrar.
+   * @param {string} tipo - El tipo de alerta (ej. "success", "warning", "danger").
+   * @param {HTMLElement} targetAlerta - El elemento de alerta donde mostrar el mensaje.
+   */
+  function mostrarAlerta(msg, tipo, targetAlerta = alerta) {
+    targetAlerta.textContent = msg; // Establece el texto del mensaje
+    targetAlerta.className = `alert alert-${tipo}`; // Establece las clases CSS de la alerta
+    targetAlerta.classList.remove("d-none"); // Hace visible la alerta
+    // Oculta la alerta después de 4 segundos
+    setTimeout(() => targetAlerta.classList.add("d-none"), 4000);
+  }
+
+  /**
+   * Inicializa Firebase y configura el listener de autenticación.
+   */
+  async function initFirebase() {
+    console.log("Iniciando Firebase...");
+    try {
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      auth = getAuth(app);
+
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          userId = user.uid;
+          isAuthReady = true;
+          console.log("Usuario autenticado:", userId);
+          currentUserIdDisplay.textContent = `ID de Usuario: ${userId}`;
+          appContent.style.display = 'block'; // Muestra el contenido de la aplicación
+          authContainer.style.display = 'none'; // Oculta el formulario de autenticación
+          cargarStock();
+          generarTabla();
+          console.log("Generación de tabla y carga de stock iniciadas tras autenticación.");
+        } else {
+          userId = null;
+          isAuthReady = false;
+          console.log("No hay usuario autenticado.");
+          currentUserIdDisplay.textContent = `ID de Usuario: No autenticado`;
+          appContent.style.display = 'none'; // Oculta el contenido de la aplicación
+          authContainer.style.display = 'block'; // Muestra el formulario de autenticación
+        }
+      });
+    } catch (error) {
+      console.error("Error al inicializar Firebase:", error);
+      mostrarAlerta("Error al inicializar la aplicación. Verifique la configuración.", "danger", authAlerta);
+      isAuthReady = false;
+    }
+  }
+
+  /**
+   * Maneja el registro de un nuevo usuario con email y contraseña.
+   */
+  signUpBtn.addEventListener('click', async () => {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    if (!email || !password) {
+      mostrarAlerta("Por favor, ingrese email y contraseña.", "warning", authAlerta);
+      return;
+    }
+
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      mostrarAlerta("¡Registro exitoso! Sesión iniciada.", "success", authAlerta);
+      // onAuthStateChanged manejará la visualización de la app
+    } catch (error) {
+      console.error("Error al registrarse:", error);
+      mostrarAlerta(`Error al registrarse: ${error.message}`, "danger", authAlerta);
+    }
+  });
+
+  /**
+   * Maneja el inicio de sesión de un usuario existente con email y contraseña.
+   */
+  signInBtn.addEventListener('click', async () => {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+
+    if (!email || !password) {
+      mostrarAlerta("Por favor, ingrese email y contraseña.", "warning", authAlerta);
+      return;
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      mostrarAlerta("¡Inicio de sesión exitoso!", "success", authAlerta);
+      // onAuthStateChanged manejará la visualización de la app
+    } catch (error) {
+      console.error("Error al iniciar sesión:", error);
+      mostrarAlerta(`Error al iniciar sesión: ${error.message}`, "danger", authAlerta);
+    }
+  });
+
+  /**
+   * Maneja el cierre de sesión del usuario.
+   */
+  logoutBtn.addEventListener('click', async () => {
+    try {
+      await signOut(auth);
+      mostrarAlerta("Sesión cerrada correctamente.", "info", alerta);
+      // onAuthStateChanged manejará la visualización del formulario de autenticación
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      mostrarAlerta(`Error al cerrar sesión: ${error.message}`, "danger", alerta);
+    }
+  });
+
+
+  /**
+   * Genera dinámicamente las filas de la tabla de registro de movimientos
+   * y las opciones para el filtro de bebida.
+   */
+  function generarTabla() {
+    console.log("Generando tabla de bebidas...");
+    tbody.innerHTML = ""; // Limpia el contenido actual de la tabla de bebidas
+    filtroBebidaSelect.innerHTML = '<option value="">Todas</option>'; // Añade la opción "Todas" al filtro
+    if (bebidas.length === 0) {
+      console.warn("La lista de bebidas está vacía. No se generarán filas.");
+      tbody.innerHTML = '<tr><td colspan="3" class="text-muted">No hay bebidas configuradas.</td></tr>';
+      return;
+    }
+    bebidas.forEach(b => {
+      const isAdulto = bebidasAdulto.includes(b);
+      const rowClass = isAdulto ? 'class="bebida-adulto"' : '';
+      const inputCantidad = `<input type="number" class="form-control cantidad-entero" data-bebida="${b}" min="0" value="0" style="width: 90px; display: inline-block;">`;
+      const radioFracciones = `
+        <div class="btn-group" role="group" aria-label="Fracciones">
+          <input type="radio" class="btn-check" name="fraccion-${b}" id="fraccion-${b}-1-4" value="0.25" autocomplete="off">
+          <label class="btn btn-secondary btn-sm" for="fraccion-${b}-1-4">1/4</label>
+
+          <input type="radio" class="btn-check" name="fraccion-${b}" id="fraccion-${b}-1-2" value="0.5" autocomplete="off">
+          <label class="btn btn-secondary btn-sm" for="fraccion-${b}-1-2">1/2</label>
+
+          <input type="radio" class="btn-check" name="fraccion-${b}" id="fraccion-${b}-3-4" value="0.75" autocomplete="off">
+          <label class="btn btn-secondary btn-sm" for="fraccion-${b}-3-4">3/4</label>
+        </div>
+        <span class="btn btn-sm btn-link text-danger p-0 ms-2 deseleccionar-fraccion" data-bebida="${b}" style="cursor: pointer;">
+          <i class="fas fa-times-circle"></i>
+        </span>
+      `;
+      // Añade una fila para cada bebida con campos de cantidad y precio
+      tbody.innerHTML += `<tr ${rowClass}>
+        <td>${b}</td>
+        <td>
+          <div class="d-flex justify-content-center align-items-center gap-2">
+            ${inputCantidad}
+            ${radioFracciones}
+          </div>
+        </td>
+        <td><input type="number" class="form-control precio" data-bebida="${b}" min="0" step="0.01" /></td>
+      </tr>`;
+      // Añade la bebida como opción en el filtro
+      filtroBebidaSelect.innerHTML += `<option value="${b}">${b}</option>`;
+    });
+    console.log("Tabla de bebidas generada.");
+  }
+  
+  tbody.addEventListener('click', (e) => {
+    if (e.target.closest('.deseleccionar-fraccion')) {
+      const botonDeseleccionar = e.target.closest('.deseleccionar-fraccion');
+      const bebida = botonDeseleccionar.dataset.bebida;
+      const fraccionSeleccionada = document.querySelector(`input[name="fraccion-${bebida}"]:checked`);
+      if (fraccionSeleccionada) {
+        fraccionSeleccionada.checked = false;
+      }
+    }
+  });
+
+
+  // Añade un event listener al formulario de registro para manejar el envío
+  document.getElementById("registroForm").addEventListener("submit", async e => {
+    e.preventDefault(); // Previene el envío por defecto del formulario
+
+    if (!db || !userId || !isAuthReady) {
+      mostrarAlerta("La aplicación no está lista o el usuario no está autenticado.", "warning");
+      console.warn("Intento de registro fallido: Firebase o autenticación no listos.");
+      return;
+    }
+
+    // Obtiene los valores de los campos del formulario
+    const tipo = document.getElementById("tipo").value;
+    const fecha = document.getElementById("fecha").value;
+    const evento = document.getElementById("evento").value;
+    const usuario = document.getElementById("usuario").value; // Encargado
+
+    const filas = tbody.querySelectorAll("tr"); // Selecciona todas las filas
+    let registros = []; // Array para almacenar los registros a enviar
+
+    // Itera sobre las filas de la tabla para recopilar los datos
+    filas.forEach(fila => {
+      const bebida = fila.querySelector(".cantidad-entero").dataset.bebida;
+      const inputEntero = fila.querySelector(".cantidad-entero");
+      const radioSeleccionado = fila.querySelector('input[name="fraccion-' + bebida + '"]:checked');
+      const inputPrecio = fila.querySelector(".precio");
+
+      const cantidadEntera = parseFloat(inputEntero.value) || 0;
+      const cantidadFraccion = radioSeleccionado ? parseFloat(radioSeleccionado.value) : 0;
+      const cantidadFinal = cantidadEntera + cantidadFraccion;
+      const precio = parseFloat(inputPrecio.value);
+
+      // Solo añade el registro si la cantidad es un número válido y mayor que 0
+      if (!isNaN(cantidadFinal) && cantidadFinal > 0) {
+        registros.push({
+          tipo,
+          fecha,
+          evento,
+          usuario,
+          bebida,
+          cantidad: cantidadFinal,
+          precio: isNaN(precio) ? "" : precio, // Si el precio no es un número, se envía vacío
+          timestamp: serverTimestamp() // Añade una marca de tiempo del servidor para ordenar
+        });
+      }
+    });
+
+    // Si no se ingresó ninguna bebida, muestra una alerta y detiene la ejecución
+    if (registros.length === 0) {
+      mostrarAlerta("Ingrese al menos una bebida", "warning");
+      console.warn("No se ingresó ninguna bebida para registrar.");
+      return;
+    }
+
+    try {
+      // Referencia a la colección donde se guardarán los movimientos
+      const movimientosCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/movimientos`);
+
+      // Envía todos los registros a Firestore en paralelo
+      console.log("Enviando registros a Firestore:", registros);
+      await Promise.all(registros.map(dato => addDoc(movimientosCollectionRef, dato)));
+
+      mostrarAlerta("¡Registro exitoso!", "success"); // Muestra mensaje de éxito
+      document.getElementById("registroForm").reset(); // Limpia el formulario
+      generarTabla(); // Vuelve a generar la tabla de bebidas
+      // cargarStock() se actualizará automáticamente gracias a onSnapshot
+      console.log("Registros enviados con éxito.");
+    } catch (error) { // Captura cualquier error en la escritura a Firestore
+      console.error("Error al registrar movimiento en Firestore:", error);
+      mostrarAlerta("Error al registrar: " + error.message, "danger"); // Muestra mensaje de error
+    }
+  });
+
+  /**
+   * Carga y muestra el stock actual de bebidas desde Firestore en tiempo real.
+   */
+  function cargarStock() {
+    if (!db || !userId || !isAuthReady) {
+      stockContainer.innerHTML = "<p class='text-muted'>Esperando autenticación para cargar stock...</p>";
+      console.log("Cargar stock: Firebase o autenticación no listos.");
+      return;
+    }
+
+    stockContainer.innerHTML = "<p class='text-muted'>Cargando stock...</p>"; // Muestra un mensaje de carga
+    const movimientosCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/movimientos`);
+
+    console.log("Configurando listener de stock en tiempo real...");
+    // Escucha cambios en tiempo real en la colección de movimientos
+    onSnapshot(movimientosCollectionRef, (snapshot) => {
+      let stock = {};
+      if (snapshot.empty) {
+        console.log("No hay documentos en la colección de movimientos.");
+      }
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const tipo = data.tipo;
+        const bebida = data.bebida;
+        const cantidad = parseFloat(data.cantidad);
+
+        if (bebida && !isNaN(cantidad)) {
+          if (!stock[bebida]) {
+            stock[bebida] = 0;
+          }
+          if (tipo === "compra") {
+            stock[bebida] += cantidad;
+          } else if (tipo === "consumo" || tipo === "merma") {
+            stock[bebida] -= cantidad;
+          }
+        }
+      });
+
+      stockContainer.innerHTML = ""; // Limpia el contenido del contenedor de stock
+      if (Object.keys(stock).length === 0) {
+        stockContainer.innerHTML = "<p class='text-center text-info'>No hay stock registrado.</p>";
+        console.log("Stock calculado: Vacío.");
+        return;
+      }
+
+      // Itera sobre las bebidas y muestra su cantidad en el stock
+      bebidas.forEach(b => {
+        const cantidad = stock[b] || 0; // Obtiene la cantidad de la bebida, 0 si no existe
+        stockContainer.innerHTML += `<div class="stock-item"><strong>${b}</strong><span>${cantidad}</span></div>`;
+      });
+      console.log("Stock actualizado y mostrado:", stock);
+    }, (error) => {
+      console.error("Error al cargar stock en tiempo real:", error);
+      stockContainer.innerHTML = `<p class='text-danger'>Error al cargar stock: ${error.message}</p>`;
+    });
+  }
+
+  /**
+   * Filtra y muestra los registros de movimientos anteriores desde Firestore.
+   */
+  async function filtrarRegistros() {
+    const tabla = document.getElementById("tablaRegistros");
+    tabla.innerHTML = "<p class='text-center text-muted'>Cargando...</p>"; // Muestra un mensaje de carga
+
+    if (!db || !userId || !isAuthReady) {
+      tabla.innerHTML = "<p class='text-muted'>Esperando autenticación para filtrar...</p>";
+      console.warn("Filtrar registros: Firebase o autenticación no listos.");
+      return;
+    }
+
+    // Obtiene los valores de los filtros
+    const filtroFecha = document.getElementById("filtroFecha").value;
+    const filtroTipo = document.getElementById("filtroTipo").value;
+    const filtroEvento = document.getElementById("filtroEvento").value;
+    const filtroBebida = filtroBebidaSelect.value;
+
+    console.log("Valores de filtro - Fecha:", filtroFecha, "Tipo:", filtroTipo, "Bebida:", filtroBebida, "Evento:", filtroEvento);
+
+    const movimientosCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/movimientos`);
+    let q = query(movimientosCollectionRef);
+
+    // Aplica los filtros a la consulta de Firestore
+    if (filtroFecha) {
+      console.log("Aplicando filtro de fecha en Firestore:", filtroFecha);
+      q = query(q, where("fecha", "==", filtroFecha));
+    }
+    if (filtroTipo) {
+      console.log("Aplicando filtro de tipo en Firestore:", filtroTipo);
+      q = query(q, where("tipo", "==", filtroTipo));
+    }
+    if (filtroBebida) {
+      console.log("Aplicando filtro de bebida en Firestore:", filtroBebida);
+      q = query(q, where("bebida", "==", filtroBebida));
+    }
+    // Para filtro de evento, Firestore no soporta "contains" directamente para strings.
+    // Se filtrará después de obtener los resultados si es necesario.
+
+    console.log("Aplicando filtros y obteniendo registros...");
+    try {
+      // --- PASO 1: Obtener los últimos precios de compra para cada bebida ---
+      let latestPurchasePrices = {};
+      const purchaseQuery = query(movimientosCollectionRef, where("tipo", "==", "compra"));
+      const purchaseSnapshot = await getDocs(purchaseQuery);
+
+      purchaseSnapshot.forEach(doc => {
+        const data = doc.data();
+        const bebida = data.bebida;
+        const precio = parseFloat(data.precio);
+        const timestamp = data.timestamp ? data.timestamp.toDate().getTime() : 0; // Convertir Timestamp a milisegundos
+
+        if (bebida && !isNaN(precio) && precio > 0) {
+          if (!latestPurchasePrices[bebida] || timestamp > latestPurchasePrices[bebida].timestamp) {
+            latestPurchasePrices[bebida] = { price: precio, timestamp: timestamp };
+          }
+        }
+      });
+      console.log("Últimos precios de compra conocidos:", latestPurchasePrices);
+
+      // --- PASO 2: Obtener los registros filtrados por el usuario ---
+      const querySnapshot = await getDocs(q); // Obtiene los documentos que coinciden con la consulta
+      let records = [];
+      let beverageTotals = {}; // Objeto para almacenar los totales por bebida
+      let grandTotal = 0; // Variable para el total general
+
+      if (querySnapshot.empty) {
+        console.log("Firestore querySnapshot está vacío.");
+      }
+      querySnapshot.forEach(doc => {
+        let data = doc.data();
+        console.log("Documento recuperado:", data); // Log cada documento para verificar su fecha
+
+        // Filtrado adicional en el cliente para 'evento' si es necesario
+        if (filtroEvento && data.evento && !data.evento.toLowerCase().includes(filtroEvento.toLowerCase())) {
+          console.log("Documento filtrado por evento (cliente):", data.evento);
+          return; // Saltar este documento si no coincide con el filtro de evento
+        }
+
+        let currentPrice = parseFloat(data.precio);
+        // Si es un consumo y no tiene precio, usa el último precio de compra
+        if ((data.tipo === "consumo" || data.tipo === "merma") && (isNaN(currentPrice) || currentPrice <= 0)) {
+          if (latestPurchasePrices[data.bebida]) {
+            currentPrice = latestPurchasePrices[data.bebida].price;
+            console.log(`Aplicando último precio de compra para ${data.bebida}: $${currentPrice}`);
+          } else {
+            currentPrice = 0; // No hay precio de compra conocido
+            console.warn(`No se encontró precio de compra para ${data.bebida}.`);
+          }
+        }
+
+        const currentQuantity = parseFloat(data.cantidad);
+        const recordTotal = (!isNaN(currentPrice) && !isNaN(currentQuantity) && currentQuantity > 0) ? (currentPrice * currentQuantity) : 0;
+
+        // Actualizar el objeto de datos con el precio aplicado para la visualización
+        data.precioAplicado = !isNaN(currentPrice) && currentPrice > 0 ? currentPrice.toFixed(2) : '';
+        data.totalCalculado = recordTotal > 0 ? recordTotal.toFixed(2) : '';
+
+        if (recordTotal > 0) {
+          const beverage = data.bebida;
+          if (!beverageTotals[beverage]) {
+            beverageTotals[beverage] = 0;
+          }
+          beverageTotals[beverage] += recordTotal;
+          grandTotal += recordTotal; // Sumar al total general
+        }
+        records.push(data); // Añadir el registro (posiblemente con precio aplicado)
+      });
+
+      // Ordenar los registros por fecha (y luego por timestamp si existe)
+      records.sort((a, b) => {
+        const dateA = new Date(a.fecha);
+        const dateB = new Date(b.fecha);
+        if (dateA.getTime() !== dateB.getTime()) {
+          return dateA.getTime() - dateB.getTime();
+        }
+        // Si las fechas son iguales, ordenar por timestamp (si existe)
+        const tsA = a.timestamp ? a.timestamp.toDate().getTime() : 0;
+        const tsB = b.timestamp ? b.timestamp.toDate().getTime() : 0;
+        return tsA - tsB;
+      });
+
+
+      if (records.length === 0) {
+        tabla.innerHTML = "<p class='text-center text-info'>Sin resultados</p>";
+        console.log("Filtrado: Sin resultados después de aplicar todos los filtros.");
+        return;
+      }
+
+      // Construye la tabla HTML con los registros filtrados
+      let html = `<div class="table-responsive"><table class="table table-bordered text-center align-middle"><thead class="table-dark"><tr><th>Fecha</th><th>Tipo</th><th>Bebida</th><th>Cantidad</th><th>Evento</th><th>Usuario</th><th>Precio</th><th>Total</th></tr></thead><tbody>`;
+      records.forEach(r => {
+        // Formatea la fecha si es un objeto Timestamp de Firestore
+        const displayFecha = r.fecha instanceof Date ? r.fecha.toISOString().split('T')[0] : r.fecha;
+        // Usa precioAplicado si existe, de lo contrario el precio original o vacío
+        const displayPrecio = r.precioAplicado || r.precio || '';
+        const displayTotal = r.totalCalculado || ''; // Usa el total calculado
+
+        html += `<tr><td>${displayFecha}</td><td>${r.tipo}</td><td>${r.bebida}</td><td>${r.cantidad}</td><td>${r.evento}</td><td>${r.usuario}</td><td>${displayPrecio}</td><td>${displayTotal}</td></tr>`;
+      });
+      // Añadir la fila del total general
+      html += `<tr class="total-general-row">
+                 <td colspan="7" class="text-end">TOTAL GENERAL:</td>
+                 <td>$${grandTotal.toFixed(2)}</td>
+               </tr>`;
+      html += "</tbody></table></div>";
+      tabla.innerHTML = html; // Inserta la tabla en el DOM
+      console.log("Registros filtrados mostrados. Total de registros:", records.length);
+      console.log("Total General Calculado:", grandTotal.toFixed(2));
+
+      // Añadir la tabla de resumen de costos por bebida (opcional, si aún la quieres)
+      let summaryHtml = `<div class="mt-5">
+        <h5 class="text-center">Resumen de Costos por Bebida (Filtrado)</h5>
+        <table class="table table-bordered text-center align-middle">
+          <thead class="table-dark">
+            <tr>
+              <th>Bebida</th>
+              <th>Total en Pesos</th>
+            </tr>
+          </thead>
+          <tbody>`;
+
+      const sortedBeverages = Object.keys(beverageTotals).sort(); // Ordenar alfabéticamente las bebidas
+      if (sortedBeverages.length === 0) {
+        summaryHtml += `<tr><td colspan="2" class="text-muted">No hay costos registrados para las bebidas filtradas.</td></tr>`;
+      } else {
+        sortedBeverages.forEach(bebida => {
+          summaryHtml += `<tr><td>${bebida}</td><td>$${beverageTotals[bebida].toFixed(2)}</td></tr>`;
+        });
+      }
+      summaryHtml += `</tbody></table></div>`;
+
+      tabla.innerHTML += summaryHtml; // Añade el resumen al final del contenido de la tablaRegistros
+      console.log("Resumen de costos por bebida generado:", beverageTotals);
+
+    } catch (error) {
+      console.error("Error al filtrar registros de Firestore:", error);
+      tabla.innerHTML = `<p class='text-danger text-center'>Error al filtrar: ${error.message}</p>`;
+    }
+  }
+
+  /**
+   * Limpia los campos de filtro y la tabla de registros.
+   */
+  function limpiarFiltros() {
+    document.getElementById("filtroFecha").value = "";
+    document.getElementById("filtroTipo").value = "";
+    document.getElementById("filtroEvento").value = "";
+    filtroBebidaSelect.value = ""; // Restablece el filtro de bebida
+    document.getElementById("tablaRegistros").innerHTML = "<p class='text-muted text-center'>Usa los filtros para ver movimientos anteriores.</p>";
+    console.log("Filtros limpiados.");
+  }
+
+  // Se ejecuta cuando el DOM ha sido completamente cargado
+  document.addEventListener("DOMContentLoaded", () => {
+    console.log("DOM Content Loaded. Iniciando Firebase...");
+    initFirebase(); // Inicializa Firebase y la autenticación
+    // La generación de tabla y carga de stock se llaman después de la autenticación
+    document.getElementById("fecha").valueAsDate = new Date(); // Establece la fecha actual
+
+    // Asocia los event listeners a los botones
+    btnActualizarStock.addEventListener('click', cargarStock);
+    btnAplicarFiltros.addEventListener('click', filtrarRegistros);
+    btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
+  });
+</script>
+</body>
+</html>
