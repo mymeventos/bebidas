@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Presupuesto de Eventos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --background-color: #ecf0f1;
+            --card-background: #ffffff;
+            --border-radius: 8px;
+            --box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--background-color);
+            color: var(--secondary-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .card {
+            background: var(--card-background);
+            padding: 40px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            max-width: 900px;
+            width: 100%;
+            transition: transform 0.3s ease;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--background-color);
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-weight: 600;
+            color: var(--secondary-color);
+            margin-bottom: 5px;
+        }
+
+        p {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .cost-section {
+            grid-column: 1;
+        }
+
+        .guest-section {
+            grid-column: 2;
+        }
+
+        h2 {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9em;
+            font-weight: 400;
+            margin-bottom: 5px;
+        }
+
+        input[type="number"], input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #dcdfe6;
+            border-radius: var(--border-radius);
+            transition: border-color 0.3s, box-shadow 0.3s;
+            font-size: 1em;
+        }
+
+        input[type="number"]:focus, input[type="date"]:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .results-section {
+            background-color: #f8f9fa;
+            padding: 25px;
+            border-radius: var(--border-radius);
+            border: 1px solid #e0e6ed;
+            margin-top: 30px;
+        }
+
+        .result-box {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .result-item {
+            background: #fff;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .result-item span {
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+
+        .result-item strong {
+            font-size: 1.2em;
+            color: var(--primary-color);
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        #incidenciaList {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 15px;
+        }
+
+        #incidenciaList li {
+            background-color: #fff;
+            margin-bottom: 10px;
+            padding: 12px 15px;
+            border-radius: var(--border-radius);
+            border-left: 4px solid var(--primary-color);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #incidenciaList li strong {
+            font-size: 1em;
+            color: var(--secondary-color);
+            font-weight: 400;
+        }
+        
+        #incidenciaList li .costo-incidencia {
+            font-size: 1em;
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        #incidenciaList .placeholder {
+            color: #95a5a6;
+            text-align: center;
+            font-style: italic;
+            border-left: none;
+            box-shadow: none;
+            padding: 10px;
+        }
+
+        #historySection {
+            margin-top: 40px;
+            padding-top: 40px;
+            border-top: 2px solid var(--background-color);
+        }
+        #historyList {
+            list-style-type: none;
+            padding: 0;
+        }
+        #historyList li {
+            background-color: var(--card-background);
+            border: 1px solid #e0e6ed;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s;
+        }
+        #historyList li:hover {
+            background-color: #f1f3f4;
+        }
+        #historyList li span {
+            font-size: 1em;
+            cursor: pointer; /* Hace que el texto también sea clickable para cargar */
+            flex-grow: 1; /* Permite que el texto ocupe el espacio disponible */
+        }
+        .history-item-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            font-size: 1.5em;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 10px;
+            transition: color 0.2s;
+            width: auto;
+            margin: 0;
+            padding: 0;
+        }
+        .delete-btn:hover {
+            color: #c0392b;
+            transform: scale(1.1);
+        }
+        .history-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .history-buttons button {
+            width: auto;
+            padding: 8px 12px;
+            font-size: 0.9em;
+            margin: 0;
+        }
+        
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <header>
+            <h1>Calculadora de Presupuesto por Evento</h1>
+            <p>Ingresa los costos y la cantidad de invitados para obtener un desglose detallado.</p>
+        </header>
+
+        <div class="main-grid">
+            <div class="cost-section">
+                <h2>Costos Totales</h2>
+                <div class="input-group">
+                    <label for="entrada">Entrada</label>
+                    <input type="number" id="entrada" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="principal">Plato Principal</label>
+                    <input type="number" id="principal" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="postre">Postre</label>
+                    <input type="number" id="postre" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="bebidaAdulto">Bebida (con alcohol)</label>
+                    <input type="number" id="bebidaAdulto" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="bebidaSinAlcohol">Bebida (sin alcohol)</label>
+                    <input type="number" id="bebidaSinAlcohol" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="pasteleria">Pastelería</label>
+                    <input type="number" id="pasteleria" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="torta">Torta</label>
+                    <input type="number" id="torta" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="decoracion">Decoración</label>
+                    <input type="number" id="decoracion" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="animador">Animador</label>
+                    <input type="number" id="animador" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="sonido">Sonido</label>
+                    <input type="number" id="sonido" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="limpieza">Limpieza</label>
+                    <input type="number" id="limpieza" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="servicio">Servicio (mozos)</label>
+                    <input type="number" id="servicio" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="seguridad">Seguridad</label>
+                    <input type="number" id="seguridad" placeholder="0" value="0">
+                </div>
+            </div>
+
+            <div class="guest-section">
+                <h2>Invitados y Fecha</h2>
+                <div class="input-group">
+                    <label for="adultos">Adultos</label>
+                    <input type="number" id="adultos" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="adolescentes">Adolescentes / Niños</label>
+                    <input type="number" id="adolescentes" placeholder="0" value="0">
+                </div>
+                <div class="input-group">
+                    <label for="fechaEvento">Fecha del Evento</label>
+                    <input type="date" id="fechaEvento">
+                </div>
+            </div>
+        </div>
+
+        <button id="calculate-btn">Calcular Presupuesto</button>
+
+        <div id="results-and-history">
+            <div id="results-section">
+                <h2>Resumen del Presupuesto</h2>
+                <div class="result-box">
+                    <div class="result-item">
+                        <span>Costo Total del Evento:</span>
+                        <strong id="costoTotal">$0.00</strong>
+                    </div>
+                    <div class="result-item">
+                        <span>Costo Promedio por Invitado:</span>
+                        <strong id="costoPorInvitado">$0.00</strong>
+                    </div>
+                </div>
+                
+                <h3>Incidencia por Ítem (por invitado)</h3>
+                <ul id="incidenciaList">
+                    <li class="placeholder">Ingresa los datos para ver el desglose.</li>
+                </ul>
+                <div class="history-buttons">
+                    <button onclick="guardarPresupuesto()">Guardar Presupuesto</button>
+                    <button id="download-btn" disabled>Descargar PDF</button>
+                </div>
+            </div>
+
+            <div id="historySection">
+                <h2>Historial de Presupuestos</h2>
+                <ul id="historyList">
+                    <li class="placeholder">Aún no hay presupuestos guardados.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, getDoc, onSnapshot, query, orderBy, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyAHfbcHAmkhVvCB2J4jVKh8w_8CCl1xBsA",
+            authDomain: "presupuesto-abf66.firebaseapp.com",
+            projectId: "presupuesto-abf66",
+            storageBucket: "presupuesto-abf66.firebasestorage.app",
+            messagingSenderId: "943056871865",
+            appId: "1:943056871865:web:5451e13c501802d241d668",
+            measurementId: "G-600GZT2DSC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.db = db;
+        window.collection = collection;
+        window.addDoc = addDoc;
+        window.doc = doc;
+        window.getDoc = getDoc;
+        window.onSnapshot = onSnapshot;
+        window.query = query;
+        window.orderBy = orderBy;
+        window.serverTimestamp = serverTimestamp;
+        window.deleteDoc = deleteDoc;
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('calculate-btn').addEventListener('click', () => {
+                calcularPresupuesto();
+            });
+            
+            document.getElementById('download-btn').addEventListener('click', () => {
+                const docId = document.getElementById('download-btn').getAttribute('data-doc-id');
+                if (docId) {
+                    descargarPDF(docId);
+                } else {
+                    alert("Por favor, carga un presupuesto del historial o guarda uno nuevo para poder descargarlo.");
+                }
+            });
+
+            setTimeout(cargarHistorial, 500); 
+        });
+
+        function calcularPresupuesto() {
+            const costos = {
+                entrada: parseFloat(document.getElementById('entrada').value) || 0,
+                principal: parseFloat(document.getElementById('principal').value) || 0,
+                postre: parseFloat(document.getElementById('postre').value) || 0,
+                bebidaAdulto: parseFloat(document.getElementById('bebidaAdulto').value) || 0,
+                bebidaSinAlcohol: parseFloat(document.getElementById('bebidaSinAlcohol').value) || 0,
+                pasteleria: parseFloat(document.getElementById('pasteleria').value) || 0,
+                torta: parseFloat(document.getElementById('torta').value) || 0,
+                decoracion: parseFloat(document.getElementById('decoracion').value) || 0,
+                animador: parseFloat(document.getElementById('animador').value) || 0,
+                sonido: parseFloat(document.getElementById('sonido').value) || 0,
+                limpieza: parseFloat(document.getElementById('limpieza').value) || 0,
+                servicio: parseFloat(document.getElementById('servicio').value) || 0,
+                seguridad: parseFloat(document.getElementById('seguridad').value) || 0
+            };
+
+            const adultos = parseInt(document.getElementById('adultos').value) || 0;
+            const adolescentes = parseInt(document.getElementById('adolescentes').value) || 0;
+            const totalInvitados = adultos + adolescentes;
+            const costoTotalEvento = Object.values(costos).reduce((sum, current) => sum + current, 0);
+            const costoPorInvitadoGeneral = totalInvitados > 0 ? costoTotalEvento / totalInvitados : 0;
+
+            document.getElementById('costoTotal').textContent = `$${costoTotalEvento.toFixed(2)}`;
+            document.getElementById('costoPorInvitado').textContent = totalInvitados > 0 ? `$${costoPorInvitadoGeneral.toFixed(2)}` : '$0.00';
+
+            const incidenciaList = document.getElementById('incidenciaList');
+            incidenciaList.innerHTML = '';
+
+            if (totalInvitados > 0) {
+                const displayNames = {
+                    entrada: "Entrada", principal: "Plato Principal", postre: "Postre",
+                    bebidaAdulto: "Bebida (con alcohol)", bebidaSinAlcohol: "Bebida (sin alcohol)",
+                    pasteleria: "Pastelería", torta: "Torta", decoracion: "Decoración",
+                    animador: "Animador", sonido: "Sonido", limpieza: "Limpieza",
+                    servicio: "Servicio (mozos)", seguridad: "Seguridad"
+                };
+                
+                for (const [key, value] of Object.entries(costos)) {
+                    if (value > 0) {
+                        let incidenciaPorInvitado = totalInvitados > 0 ? value / totalInvitados : 0;
+                        if (key === 'bebidaAdulto' && adultos > 0) {
+                            incidenciaPorInvitado = value / adultos;
+                        } else if (key === 'bebidaSinAlcohol' && totalInvitados > 0) {
+                            incidenciaPorInvitado = value / totalInvitados;
+                        }
+
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `<strong>${displayNames[key] || key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')}</strong> <span class="costo-incidencia">$${incidenciaPorInvitado.toFixed(2)} por invitado</span>`;
+                        incidenciaList.appendChild(listItem);
+                    }
+                }
+            } else {
+                const placeholderItem = document.createElement('li');
+                placeholderItem.className = 'placeholder';
+                placeholderItem.textContent = "Ingresa los datos para ver el desglose.";
+                incidenciaList.appendChild(placeholderItem);
+            }
+        }
+
+        async function guardarPresupuesto() {
+            const fechaEvento = document.getElementById('fechaEvento').value;
+            if (!fechaEvento) {
+                alert("Por favor, selecciona una fecha para el evento.");
+                return;
+            }
+
+            const costos = {
+                entrada: parseFloat(document.getElementById('entrada').value) || 0,
+                principal: parseFloat(document.getElementById('principal').value) || 0,
+                postre: parseFloat(document.getElementById('postre').value) || 0,
+                bebidaAdulto: parseFloat(document.getElementById('bebidaAdulto').value) || 0,
+                bebidaSinAlcohol: parseFloat(document.getElementById('bebidaSinAlcohol').value) || 0,
+                pasteleria: parseFloat(document.getElementById('pasteleria').value) || 0,
+                torta: parseFloat(document.getElementById('torta').value) || 0,
+                decoracion: parseFloat(document.getElementById('decoracion').value) || 0,
+                animador: parseFloat(document.getElementById('animador').value) || 0,
+                sonido: parseFloat(document.getElementById('sonido').value) || 0,
+                limpieza: parseFloat(document.getElementById('limpieza').value) || 0,
+                servicio: parseFloat(document.getElementById('servicio').value) || 0,
+                seguridad: parseFloat(document.getElementById('seguridad').value) || 0
+            };
+            const adultos = parseInt(document.getElementById('adultos').value) || 0;
+            const adolescentes = parseInt(document.getElementById('adolescentes').value) || 0;
+
+            if (adultos + adolescentes === 0) {
+                alert("No se puede guardar un presupuesto sin invitados.");
+                return;
+            }
+
+            const nuevoPresupuesto = {
+                fecha: fechaEvento,
+                costos,
+                adultos,
+                adolescentes,
+                costoTotal: Object.values(costos).reduce((sum, current) => sum + current, 0),
+                timestamp: serverTimestamp()
+            };
+
+            try {
+                await addDoc(collection(db, "presupuestos"), nuevoPresupuesto);
+                alert("Presupuesto guardado exitosamente en Firebase.");
+            } catch (e) {
+                console.error("Error al añadir el documento: ", e);
+                alert("Error al guardar el presupuesto.");
+            }
+        }
+
+        function cargarHistorial() {
+            const historyList = document.getElementById('historyList');
+            const downloadBtn = document.getElementById('download-btn');
+            
+            const q = query(collection(db, "presupuestos"), orderBy("timestamp", "desc"));
+
+            onSnapshot(q, (snapshot) => {
+                historyList.innerHTML = '';
+                if (snapshot.empty) {
+                    historyList.innerHTML = '<li class="placeholder">Aún no hay presupuestos guardados.</li>';
+                    downloadBtn.disabled = true;
+                    return;
+                }
+                downloadBtn.disabled = false;
+                
+                snapshot.forEach(docItem => {
+                    const presupuesto = docItem.data();
+                    const docId = docItem.id;
+                    const date = new Date(presupuesto.fecha);
+                    const formattedDate = date.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+                    const listItem = document.createElement('li');
+                    
+                    const itemText = document.createElement('span');
+                    itemText.textContent = `Presupuesto del ${formattedDate} - Total: $${presupuesto.costoTotal.toFixed(2)}`;
+                    itemText.onclick = () => cargarPresupuestoDesdeHistorial(docId);
+                    
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'delete-btn';
+                    deleteButton.textContent = '×';
+                    deleteButton.onclick = (event) => {
+                        event.stopPropagation(); // Evita que se dispare el evento de cargar al hacer clic en el botón de eliminar
+                        eliminarPresupuesto(docId);
+                    };
+
+                    listItem.appendChild(itemText);
+                    listItem.appendChild(deleteButton);
+                    historyList.appendChild(listItem);
+                });
+            });
+        }
+        
+        async function eliminarPresupuesto(docId) {
+            const confirmacion = confirm("¿Estás seguro de que quieres eliminar este presupuesto?");
+            if (confirmacion) {
+                try {
+                    await deleteDoc(doc(db, "presupuestos", docId));
+                    alert("Presupuesto eliminado correctamente.");
+                } catch (e) {
+                    console.error("Error al eliminar el documento: ", e);
+                    alert("Error al eliminar el presupuesto.");
+                }
+            }
+        }
+
+        async function cargarPresupuestoDesdeHistorial(docId) {
+            try {
+                const docSnap = await getDoc(doc(db, "presupuestos", docId));
+                if (!docSnap.exists()) {
+                    alert("El presupuesto no existe.");
+                    return;
+                }
+                const presupuesto = docSnap.data();
+
+                for (const key in presupuesto.costos) {
+                    const input = document.getElementById(key);
+                    if (input) input.value = presupuesto.costos[key];
+                }
+                document.getElementById('adultos').value = presupuesto.adultos;
+                document.getElementById('adolescentes').value = presupuesto.adolescentes;
+                document.getElementById('fechaEvento').value = presupuesto.fecha;
+                
+                document.getElementById('download-btn').setAttribute('data-doc-id', docId);
+
+                calcularPresupuesto();
+                alert(`Presupuesto del ${new Date(presupuesto.fecha).toLocaleDateString()} cargado.`);
+            } catch (e) {
+                console.error("Error al cargar el documento: ", e);
+                alert("Error al cargar el presupuesto.");
+            }
+        }
+
+        async function descargarPDF(docId) {
+            if (!docId) {
+                alert("No hay un presupuesto seleccionado para descargar.");
+                return;
+            }
+
+            try {
+                const docSnap = await getDoc(doc(db, "presupuestos", docId));
+                if (!docSnap.exists()) {
+                    alert("El presupuesto no existe.");
+                    return;
+                }
+                const presupuesto = docSnap.data();
+                
+                const { jsPDF } = window.jspdf;
+                const pdfDoc = new jsPDF();
+                const formattedDate = new Date(presupuesto.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+                const totalInvitados = presupuesto.adultos + presupuesto.adolescentes;
+                
+                const primaryColor = [52, 152, 219];
+                const secondaryColor = [44, 62, 80];
+
+                pdfDoc.setFillColor(...primaryColor);
+                pdfDoc.rect(0, 0, 210, 25, 'F');
+                pdfDoc.setFontSize(18);
+                pdfDoc.setTextColor(255, 255, 255);
+                pdfDoc.text("Resumen de Presupuesto del Evento", 10, 15);
+
+                pdfDoc.setFontSize(12);
+                pdfDoc.setTextColor(...secondaryColor);
+                pdfDoc.text(`Fecha del Evento: ${formattedDate}`, 10, 35);
+                pdfDoc.text(`Cantidad de Invitados: ${totalInvitados} (Adultos: ${presupuesto.adultos}, Niños/Adolescentes: ${presupuesto.adolescentes})`, 10, 45);
+
+                pdfDoc.setFontSize(14);
+                pdfDoc.setFont("helvetica", "bold");
+                pdfDoc.text("Resumen Financiero", 10, 65);
+                pdfDoc.setFont("helvetica", "normal");
+                pdfDoc.setFontSize(12);
+                pdfDoc.text(`Costo Total del Evento: $${presupuesto.costoTotal.toFixed(2)}`, 10, 75);
+                pdfDoc.text(`Costo Promedio por Invitado: $${totalInvitados > 0 ? (presupuesto.costoTotal / totalInvitados).toFixed(2) : '0.00'}`, 10, 85);
+
+                const startY = 100;
+                const headers = ["Ítem", "Costo Total", "Costo por Persona"];
+                const col1 = 15;
+                const col2 = 80;
+                const col3 = 140;
+                let currentY = startY;
+
+                pdfDoc.setFontSize(12);
+                pdfDoc.setFont("helvetica", "bold");
+                pdfDoc.setTextColor(255, 255, 255);
+                pdfDoc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+                pdfDoc.rect(col1 - 5, currentY - 5, 185, 8, 'F');
+                pdfDoc.text(headers[0], col1, currentY);
+                pdfDoc.text(headers[1], col2, currentY);
+                pdfDoc.text(headers[2], col3, currentY);
+                currentY += 10;
+                
+                pdfDoc.setFont("helvetica", "normal");
+                pdfDoc.setTextColor(...secondaryColor);
+                const displayNames = {
+                    entrada: "Entrada", principal: "Plato Principal", postre: "Postre",
+                    bebidaAdulto: "Bebida (con alcohol)", bebidaSinAlcohol: "Bebida (sin alcohol)",
+                    pasteleria: "Pastelería", torta: "Torta", decoracion: "Decoración",
+                    animador: "Animador", sonido: "Sonido", limpieza: "Limpieza",
+                    servicio: "Servicio (mozos)", seguridad: "Seguridad"
+                };
+
+                for (const [key, value] of Object.entries(presupuesto.costos)) {
+                    if (value > 0) {
+                        let incidenciaPorInvitado = totalInvitados > 0 ? value / totalInvitados : 0;
+                        if (key === 'bebidaAdulto' && presupuesto.adultos > 0) {
+                            incidenciaPorInvitado = value / presupuesto.adultos;
+                        } else if (key === 'bebidaSinAlcohol' && totalInvitados > 0) {
+                            incidenciaPorInvitado = value / totalInvitados;
+                        }
+
+                        pdfDoc.text(displayNames[key] || key, col1, currentY);
+                        pdfDoc.text(`$${value.toFixed(2)}`, col2, currentY);
+                        pdfDoc.text(`$${incidenciaPorInvitado.toFixed(2)}`, col3, currentY);
+                        currentY += 10;
+                    }
+                }
+                
+                pdfDoc.setFontSize(10);
+                pdfDoc.setTextColor(150, 150, 150);
+                pdfDoc.text("Generado por tu Calculadora de Presupuestos de Eventos", 10, pdfDoc.internal.pageSize.height - 10);
+
+                pdfDoc.save(`presupuesto_${presupuesto.fecha}.pdf`);
+            } catch (e) {
+                console.error("Error al obtener el documento para PDF: ", e);
+                alert("Error al obtener el presupuesto.");
+            }
+        }
+    </script>
+</body>
+</html>
