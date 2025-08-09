@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stock de Bebidas</title>
+  <link rel="icon" href="https://mymeventos.github.io/bebidas/mi-icono.png" type="image/png">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet" />
+  <style>
+    body { background-color: #f0f2f5; padding: 30px; font-family: 'Segoe UI', Tahoma; color: #333; }
+    .container { background: #fff; padding: 35px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.1); color: #333; }
+    .card { border: none; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); margin-bottom: 30px; }
+    .card-header { background-color: #007bff; color: white; font-weight: bold; border-radius: 10px 10px 0 0; padding: 15px 20px; font-size: 1.2rem; }
+    .form-label { font-weight: bold; color: #555; }
+    .stock-item { 
+      background: #e6f2ff; 
+      border: 1px solid #cce0ff; 
+      border-radius: 8px; 
+      padding: 10px 15px; 
+      text-align: center; 
+      min-width: 120px; 
+      max-width: 200px; 
+      flex: 1 1 auto;
+      transition: transform 0.2s;
+    }
+    .stock-item:hover {
+      transform: scale(1.05);
+    }
+    .stock-item strong { display: block; font-size: 1.1em; color: #0056b3; }
+    .stock-item span { font-size: 1.3em; font-weight: bold; color: #007bff; }
+    .stock-item-adulto {
+      background-color: #4a5568; /* Fondo gris oscuro para la sección de barra */
+      color: white; /* Letras blancas para contraste */
+      border: 1px solid #343a40;
+    }
+    .stock-item-adulto strong { color: white; }
+    .stock-item-adulto span { color: #f8d7da; } /* Un rojo claro para resaltar el stock */
+    #authContainer {
+      max-width: 400px;
+      margin: 50px auto;
+      padding: 30px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+    .seccion-separador {
+      background-color: #343a40; /* Fondo oscuro */
+      color: white;
+      font-weight: bold;
+      text-align: center;
+      padding: 10px;
+      font-size: 1.1em;
+      border-radius: 8px;
+      width: 100%;
+      margin-top: 20px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+<div id="appContent" style="display: none;">
+  <div class="container">
+    <h1 class="text-center mb-4"><i class="fas fa-warehouse"></i> Stock de Bebidas</h1>
+    <p class="text-muted text-center" id="currentUserIdDisplay">Cargando ID de usuario...</p>
+    <div class="text-center mb-3">
+      <button id="logoutBtn" class="btn btn-outline-danger btn-sm"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</button>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <i class="fas fa-chart-bar"></i> Stock Actual
+        <button class="btn btn-sm btn-light float-end" id="btnActualizarStock">Actualizar</button>
+      </div>
+      <div class="card-body d-flex flex-wrap gap-3 justify-content-center" id="stockContainer">
+        <p class="text-muted">Cargando stock...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="authContainer">
+  <h2 class="text-center mb-4">Iniciar Sesión / Registrarse</h2>
+  <div class="mb-3">
+    <label for="emailInput" class="form-label">Email</label>
+    <input type="email" class="form-control" id="emailInput" placeholder="tu@email.com" required>
+  </div>
+  <div class="mb-3">
+    <label for="passwordInput" class="form-label">Contraseña</label>
+    <input type="password" class="form-control" id="passwordInput" placeholder="********" required>
+  </div>
+  <div class="d-grid gap-2">
+    <button id="signInBtn" class="btn btn-primary">Iniciar Sesión</button>
+    <button id="signUpBtn" class="btn btn-secondary">Registrarse</button>
+  </div>
+  <div id="authAlerta" class="alert d-none mt-3"></div>
+</div>
+
+<script type="module">
+  // Importaciones de Firebase SDK
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+  import { getAuth, signInWithCustomToken, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+  import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+  const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfYVuYB0azsjXohRlpt47rvIJWX31YnVg",
+    authDomain: "bebidas-f2e09.firebaseapp.com",
+    projectId: "bebidas-f2e09",
+    storageBucket: "bebidas-f2e09.firebasestorage.app",
+    messagingSenderId: "3759804003",
+    appId: "1:3759804003:web:a6fc813d925c681c597256",
+    measurementId: "G-JZQG7XKRJC"
+  };
+  const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+  let app;
+  let db;
+  let auth;
+  let userId = null;
+  let isAuthReady = false;
+  
+  const bebidasSalon = ["Coca","Coca Zero","Sprite","Sprite Zero","Fanta","Fanta Zero","Agua","Agua Tónica","Soda", "Jugo de naranja", "Pulpa de frutilla", "Pulpa de melon", "Vino Tinto","Vino Blanco","Champagne","Sidra","Cerveza","Cerveza sin Alcohol","Rutini","Trumpeter","Nicasia","Nicasia Viognier","Tardio","Sidra sin alcohol","Anana fizz"];
+  const bebidasAdulto = ["Gancia","Ron","Ron especial","Carpano rosso","Campari","Vodka","Aperol","Piña colada","Licor de Frutilla","Licor de chocolate","Licor de menta","Blue Curacao","Gin","Fernet", "Whisky","Minerva"];
+  const bebidas = [...bebidasSalon, ...bebidasAdulto];
+
+  const appContent = document.getElementById("appContent");
+  const stockContainer = document.getElementById("stockContainer");
+  const alerta = document.getElementById("alerta");
+  const currentUserIdDisplay = document.getElementById("currentUserIdDisplay");
+  const btnActualizarStock = document.getElementById("btnActualizarStock");
+  const logoutBtn = document.getElementById("logoutBtn");
+  
+  const authContainer = document.getElementById("authContainer");
+  const emailInput = document.getElementById("emailInput");
+  const passwordInput = document.getElementById("passwordInput");
+  const signInBtn = document.getElementById("signInBtn");
+  const signUpBtn = document.getElementById("signUpBtn");
+  const authAlerta = document.getElementById("authAlerta");
+
+
+  function mostrarAlerta(msg, tipo, targetAlerta = alerta) {
+    targetAlerta.textContent = msg;
+    targetAlerta.className = `alert alert-${tipo}`;
+    targetAlerta.classList.remove("d-none");
+    setTimeout(() => targetAlerta.classList.add("d-none"), 4000);
+  }
+
+  async function initFirebase() {
+    try {
+      app = initializeApp(firebaseConfig);
+      db = getFirestore(app);
+      auth = getAuth(app);
+      
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          userId = user.uid;
+          isAuthReady = true;
+          currentUserIdDisplay.textContent = `ID de Usuario: ${userId}`;
+          appContent.style.display = 'block';
+          authContainer.style.display = 'none';
+          cargarStock();
+        } else {
+          userId = null;
+          isAuthReady = false;
+          currentUserIdDisplay.textContent = `ID de Usuario: No autenticado`;
+          appContent.style.display = 'none';
+          authContainer.style.display = 'block';
+        }
+      });
+    } catch (error) {
+      mostrarAlerta("Error al inicializar la aplicación. Verifique la configuración.", "danger", authAlerta);
+      isAuthReady = false;
+    }
+  }
+
+  signUpBtn.addEventListener('click', async () => {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+    if (!email || !password) {
+      mostrarAlerta("Por favor, ingrese email y contraseña.", "warning", authAlerta);
+      return;
+    }
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      mostrarAlerta("¡Registro exitoso! Sesión iniciada.", "success", authAlerta);
+    } catch (error) {
+      mostrarAlerta(`Error al registrarse: ${error.message}`, "danger", authAlerta);
+    }
+  });
+
+  signInBtn.addEventListener('click', async () => {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+    if (!email || !password) {
+      mostrarAlerta("Por favor, ingrese email y contraseña.", "warning", authAlerta);
+      return;
+    }
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      mostrarAlerta("¡Inicio de sesión exitoso!", "success", authAlerta);
+    } catch (error) {
+      mostrarAlerta(`Error al iniciar sesión: ${error.message}`, "danger", authAlerta);
+    }
+  });
+
+  logoutBtn.addEventListener('click', async () => {
+    try {
+      await signOut(auth);
+      mostrarAlerta("Sesión cerrada correctamente.", "info", alerta);
+    } catch (error) {
+      mostrarAlerta(`Error al cerrar sesión: ${error.message}`, "danger", alerta);
+    }
+  });
+
+  function cargarStock() {
+    if (!db || !userId || !isAuthReady) {
+      stockContainer.innerHTML = "<p class='text-muted'>Esperando autenticación para cargar stock...</p>";
+      return;
+    }
+
+    stockContainer.innerHTML = "";
+    const movimientosCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/movimientos`);
+
+    onSnapshot(movimientosCollectionRef, (snapshot) => {
+      let stock = {};
+      if (snapshot.empty) {
+        stockContainer.innerHTML = "<p class='text-center text-info'>No hay stock registrado.</p>";
+        return;
+      }
+      snapshot.docs.forEach(doc => {
+        const data = doc.data();
+        const tipo = data.tipo;
+        const bebida = data.bebida;
+        const cantidad = parseFloat(data.cantidad);
+
+        if (bebida && !isNaN(cantidad)) {
+          if (!stock[bebida]) {
+            stock[bebida] = 0;
+          }
+          if (tipo === "compra") {
+            stock[bebida] += cantidad;
+          } else if (tipo === "consumo" || tipo === "merma") {
+            stock[bebida] -= cantidad;
+          }
+        }
+      });
+      
+      stockContainer.innerHTML = "";
+      
+      if (Object.keys(stock).length === 0) {
+        stockContainer.innerHTML = "<p class='text-center text-info'>No hay stock registrado.</p>";
+        return;
+      }
+      
+      const salonHeader = document.createElement('div');
+      salonHeader.className = 'seccion-separador';
+      salonHeader.textContent = 'Sección Salón';
+      stockContainer.appendChild(salonHeader);
+
+      const salonItemsContainer = document.createElement('div');
+      salonItemsContainer.className = 'd-flex flex-wrap gap-3 justify-content-center';
+      bebidasSalon.forEach(b => {
+        const cantidad = stock[b] || 0;
+        salonItemsContainer.innerHTML += `<div class="stock-item"><strong>${b}</strong><span>${cantidad}</span></div>`;
+      });
+      stockContainer.appendChild(salonItemsContainer);
+      
+      const barraHeader = document.createElement('div');
+      barraHeader.className = 'seccion-separador';
+      barraHeader.textContent = 'Sección Barra';
+      stockContainer.appendChild(barraHeader);
+
+      const barraItemsContainer = document.createElement('div');
+      barraItemsContainer.className = 'd-flex flex-wrap gap-3 justify-content-center';
+      bebidasAdulto.forEach(b => {
+        const cantidad = stock[b] || 0;
+        barraItemsContainer.innerHTML += `<div class="stock-item stock-item-adulto"><strong>${b}</strong><span>${cantidad}</span></div>`;
+      });
+      stockContainer.appendChild(barraItemsContainer);
+      
+    }, (error) => {
+      stockContainer.innerHTML = `<p class='text-danger'>Error al cargar stock: ${error.message}</p>`;
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    initFirebase();
+    btnActualizarStock.addEventListener('click', cargarStock);
+  });
+</script>
+</body>
+</html>
