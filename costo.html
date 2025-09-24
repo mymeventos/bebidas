@@ -5,7 +5,107 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculadora de Costos de Eventos</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f8f9fa; /* Un gris claro para el fondo */
+            color: #343a40; /* Texto oscuro general */
+        }
+
+        .container {
+            max-width: 800px;
+            background-color: #ffffff; /* Fondo blanco para el contenedor principal */
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); /* Sombra más pronunciada para el contenedor */
+        }
+
+        h1 {
+            color: #007bff; /* Un azul primario para el título principal */
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        h2.card-title {
+            color: #0056b3; /* Un azul más oscuro para los títulos de sección */
+            font-weight: 600;
+            border-bottom: 2px solid #e9ecef; /* Línea sutil bajo los títulos de sección */
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card {
+            border: 1px solid #dee2e6; /* Borde más sutil para las tarjetas */
+            border-radius: 0.5rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075); /* Sombra suave */
+            padding: 1.5rem; /* Más padding dentro de las tarjetas */
+        }
+
+        label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            border-color: #ced4da;
+            padding: 0.75rem 1rem;
+            border-radius: 0.3rem;
+        }
+
+        /* Estilos para los detalles de costos */
+        #costDetails p {
+            margin-bottom: 0.75rem; /* Más espacio entre los párrafos */
+            display: flex; /* Para alinear el texto y el valor */
+            justify-content: space-between; /* Empuja el valor a la derecha */
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed #e9ecef; /* Línea punteada para separar costos */
+        }
+
+        #costDetails p:last-of-type {
+            border-bottom: none; /* Sin línea en el último item de costo antes del total */
+        }
+
+        #costDetails span {
+            font-weight: 600;
+            color: #28a745; /* Un verde para los valores monetarios */
+            font-size: 1.1rem;
+        }
+
+        #costDetails h4 {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #007bff; /* Línea de separación para el total */
+            color: #007bff;
+            display: flex;
+            justify-content: space-between;
+            font-weight: 700;
+            font-size: 1.8rem; /* Tamaño más grande para el total */
+        }
+
+        #costDetails h4 span {
+            font-size: 1.8rem; /* Asegura que el número del total también sea grande */
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+            border-radius: 0.3rem;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+    </style>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
 </head>
 <body>
@@ -57,16 +157,28 @@
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
     <script src="app.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Asumiendo que `app.js` calcula y actualiza los costos.
+            // Es buena práctica llamar a la función de cálculo al cargar la página
+            // para asegurar que los valores iniciales son correctos antes de cualquier interacción.
+            if (typeof updateCosts === 'function') {
+                updateCosts(); // Llama a la función de app.js para inicializar los costos
+            }
+
             const downloadPdfButton = document.getElementById('downloadPdfButton');
 
             if (downloadPdfButton) {
                 downloadPdfButton.addEventListener('click', function() {
+                    // Asegúrate de que los costos estén actualizados antes de generar el PDF
+                    if (typeof updateCosts === 'function') {
+                        updateCosts(); 
+                    }
+
                     // Selecciona el contenedor principal que quieres incluir en el PDF
-                    // Este es el elemento que contiene todo el formulario y los detalles.
                     const element = document.querySelector('.container');
 
                     if (element) {
@@ -74,7 +186,7 @@
                             margin: 10,
                             filename: 'Resumen_Evento.pdf',
                             image: { type: 'jpeg', quality: 0.98 },
-                            html2canvas: { scale: 2, logging: true, dpi: 192, letterRendering: true },
+                            html2canvas: { scale: 2, logging: false, dpi: 192, letterRendering: true, useCORS: true },
                             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
                         };
 
