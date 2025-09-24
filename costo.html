@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     
     <style>
+        /* Estilos CSS integrados para una mejor apariencia */
         body {
             font-family: 'Montserrat', sans-serif;
             background-color: #f8f9fa; /* Un gris claro para el fondo */
@@ -21,6 +22,8 @@
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.1); /* Sombra más pronunciada para el contenedor */
+            margin-top: 2rem;
+            margin-bottom: 2rem;
         }
 
         h1 {
@@ -104,6 +107,23 @@
             background-color: #0056b3;
             border-color: #0056b3;
         }
+
+        .btn-danger {
+            padding: 0.2rem 0.5rem;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .item-list-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        .item-list-row:last-child {
+            border-bottom: none;
+        }
     </style>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
@@ -137,14 +157,34 @@
         </div>
 
         <div class="card p-4 mb-4">
-            <h2 class="card-title mb-3">Detalle de Costos</h2>
+            <h2 class="card-title mb-3">Costos Adicionales</h2>
+            <div class="row mb-3">
+                <div class="col-md-6 form-group">
+                    <label for="itemAdicionalNombre">Nombre del Ítem:</label>
+                    <input type="text" class="form-control" id="itemAdicionalNombre" placeholder="Ej. Salón, Fotógrafo">
+                </div>
+                <div class="col-md-4 form-group">
+                    <label for="itemAdicionalCosto">Costo:</label>
+                    <input type="number" class="form-control" id="itemAdicionalCosto" min="0" value="0">
+                </div>
+                <div class="col-md-2 form-group d-flex align-items-end">
+                    <button type="button" class="btn btn-success btn-block" id="addItemButton">Agregar</button>
+                </div>
+            </div>
+            
+            <div id="additionalCostItems">
+                </div>
+        </div>
+
+        <div class="card p-4 mb-4">
+            <h2 class="card-title mb-3">Resumen de Costos</h2>
             <div id="costDetails">
-                <p>Costo por Adulto: <span id="costoAdulto">$25.00</span></p>
-                <p>Costo por Niño: <span id="costoNino">$15.00</span></p>
-                <p>Costo Total de Comida Adultos: <span id="totalComidaAdultos">$1925.00</span></p>
-                <p>Costo Total de Comida Niños: <span id="totalComidaNinos">$135.00</span></p>
-                <p>Costo Adicional (Ej. Salón): <span id="costoAdicional">$500.00</span></p>
-                <h4>Costo Total del Evento: <span id="costoTotal">$2560.00</span></h4>
+                <p>Costo por Adulto: <span id="costoAdultoVal">$25.00</span></p>
+                <p>Costo por Niño: <span id="costoNinoVal">$15.00</span></p>
+                <p>Total Comida Adultos: <span id="totalComidaAdultos">$0.00</span></p>
+                <p>Total Comida Niños: <span id="totalComidaNinos">$0.00</span></p>
+                <p>Total Costos Adicionales: <span id="totalAdicionales">$0.00</span></p>
+                <h4>Costo Total del Evento: <span id="costoTotal">$0.00</span></h4>
             </div>
         </div>
 
@@ -162,23 +202,21 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Asumiendo que `app.js` calcula y actualiza los costos.
-            // Es buena práctica llamar a la función de cálculo al cargar la página
-            // para asegurar que los valores iniciales son correctos antes de cualquier interacción.
+            // Asegura que los costos iniciales se calculen al cargar la página.
+            // La función updateCosts() estará en app.js
             if (typeof updateCosts === 'function') {
-                updateCosts(); // Llama a la función de app.js para inicializar los costos
+                updateCosts(); 
             }
 
             const downloadPdfButton = document.getElementById('downloadPdfButton');
 
             if (downloadPdfButton) {
                 downloadPdfButton.addEventListener('click', function() {
-                    // Asegúrate de que los costos estén actualizados antes de generar el PDF
+                    // Re-calcula los costos justo antes de generar el PDF para asegurar que estén actualizados
                     if (typeof updateCosts === 'function') {
                         updateCosts(); 
                     }
 
-                    // Selecciona el contenedor principal que quieres incluir en el PDF
                     const element = document.querySelector('.container');
 
                     if (element) {
