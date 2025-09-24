@@ -122,33 +122,34 @@
   import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
   import { getFirestore, collection, addDoc, onSnapshot, query, where, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-  // Variables globales proporcionadas por el entorno de Canvas
-  const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-  const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-  const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+  // IMPORTANTE: Se ha reemplazado el uso de variables globales por la configuración que proporcionaste.
+  // Tu configuración de Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyCfYVuYB0azsjXohRlpt47rvIJWX31YnVg",
+    authDomain: "bebidas-f2e09.firebaseapp.com",
+    projectId: "bebidas-f2e09",
+    storageBucket: "bebidas-f2e09.firebasestorage.app",
+    messagingSenderId: "3759804003",
+    appId: "1:3759804003:web:a6fc813d925c681c597256",
+    measurementId: "G-JZQG7XKRJC"
+  };
 
-  // Inicialización de Firebase
+  // El resto del código es el mismo que antes
   let app;
   let db;
   let auth;
-  let userId = null; // Para almacenar el ID del usuario autenticado
-  let isAuthReady = false; // Bandera para saber cuándo la autenticación está lista
+  let userId = null;
+  let isAuthReady = false;
 
-  // Lista de bebidas disponibles
   const bebidas = ["Coca","Coca Zero","Sprite","Sprite Zero","Fanta","Fanta Zero","Agua","Agua Tónica","Soda","Vino Tinto","Vino Blanco","Champagne","Sidra","Cerveza","Cerveza sin Alcohol","Rutini","Trumpeter","Nicasia","Nicasia Viognier","Tardio","Sidra sin alcohol","Anana fizz","Gancia","Ron","Ron especial","Carpano rosso","Campari","Vodka","Aperol","Piña colada","Licor de Frutilla","Licor de chocolate","Licor de menta","Blue Curacao","Gin","Fernet", "Whisky","Minerva","Jugo de naranja","Pulpa de frutilla","Pulpa de melon"];
 
   const bebidasAdulto = ["Vino Tinto", "Vino Blanco", "Champagne", "Sidra", "Cerveza", "Cerveza sin Alcohol", "Rutini", "Trumpeter", "Nicasia", "Nicasia Viognier", "Tardio", "Sidra sin alcohol", "Anana fizz", "Gancia", "Ron", "Ron especial", "Carpano rosso", "Campari", "Vodka", "Aperol", "Piña colada", "Licor de Frutilla", "Licor de chocolate", "Licor de menta", "Blue Curacao", "Gin", "Fernet", "Whisky"];
 
-  // Referencias a elementos del DOM
   const tbody = document.getElementById("tablaBebidas");
   const stockContainer = document.getElementById("stockContainer");
   const filtroBebidaSelect = document.getElementById("filtroBebida");
   const alerta = document.getElementById("alerta");
 
-  /**
-   * Inicializa Firebase y autentica al usuario.
-   * Configura listeners para el stock y los filtros una vez autenticado.
-   */
   async function initFirebase() {
     console.log("Iniciando Firebase...");
     try {
@@ -156,31 +157,23 @@
       db = getFirestore(app);
       auth = getAuth(app);
 
-      // Escucha cambios en el estado de autenticación
       onAuthStateChanged(auth, async (user) => {
         if (user) {
           userId = user.uid;
           isAuthReady = true;
           console.log("Usuario autenticado:", userId);
-          // Una vez autenticado, carga el stock y prepara los filtros
           cargarStock();
-          generarTabla(); // Genera la tabla para registrar y las opciones de filtro
+          generarTabla();
           console.log("Generación de tabla y carga de stock iniciadas tras autenticación.");
         } else {
           console.log("No hay usuario autenticado, intentando autenticación anónima...");
-          // Si no hay usuario, intenta iniciar sesión anónimamente
           try {
-            if (initialAuthToken) {
-              await signInWithCustomToken(auth, initialAuthToken);
-              console.log("Autenticación con token inicial exitosa.");
-            } else {
-              await signInAnonymously(auth);
-              console.log("Autenticación anónima exitosa.");
-            }
+            await signInAnonymously(auth);
+            console.log("Autenticación anónima exitosa.");
           } catch (error) {
             console.error("Error al autenticar:", error);
             mostrarAlerta("Error al autenticar. Intente de nuevo.", "danger");
-            isAuthReady = false; // Asegura que la bandera esté en falso si falla la autenticación
+            isAuthReady = false;
             stockContainer.innerHTML = "<p class='text-danger'>Error al autenticar. No se puede cargar el stock.</p>";
           }
         }
@@ -188,19 +181,15 @@
     } catch (error) {
       console.error("Error al inicializar Firebase:", error);
       mostrarAlerta("Error al inicializar la aplicación. Verifique la configuración.", "danger");
-      isAuthReady = false; // Asegura que la bandera esté en falso si falla la inicialización
+      isAuthReady = false;
       stockContainer.innerHTML = "<p class='text-danger'>Error al inicializar la aplicación. No se puede cargar el stock.</p>";
     }
   }
 
-  /**
-   * Genera dinámicamente las filas de la tabla de registro de movimientos
-   * y las opciones para el filtro de bebida.
-   */
   function generarTabla() {
     console.log("Generando tabla de bebidas...");
-    tbody.innerHTML = ""; // Limpia el contenido actual de la tabla de bebidas
-    filtroBebidaSelect.innerHTML = '<option value="">Todas</option>'; // Añade la opción "Todas" al filtro
+    tbody.innerHTML = "";
+    filtroBebidaSelect.innerHTML = '<option value="">Todas</option>';
     if (bebidas.length === 0) {
         console.warn("La lista de bebidas está vacía. No se generarán filas.");
         tbody.innerHTML = '<tr><td colspan="3" class="text-muted">No hay bebidas configuradas.</td></tr>';
@@ -209,49 +198,39 @@
     bebidas.forEach(b => {
       const isAdulto = bebidasAdulto.includes(b);
       const rowClass = isAdulto ? 'class="bebida-adulto"' : '';
-      // Añade una fila para cada bebida con campos de cantidad y precio
       tbody.innerHTML += `<tr ${rowClass}><td>${b}</td><td><input type="number" class="form-control cantidad" data-bebida="${b}" min="0" value="0" /></td><td><input type="number" class="form-control precio" data-bebida="${b}" min="0" step="0.01" /></td></tr>`;
-      // Añade la bebida como opción en el filtro
       filtroBebidaSelect.innerHTML += `<option value="${b}">${b}</option>`;
     });
     console.log("Tabla de bebidas generada.");
   }
 
-  // Añade un event listener al formulario de registro para manejar el envío
   document.getElementById("registroForm").addEventListener("submit", async e => {
-    e.preventDefault(); // Previene el envío por defecto del formulario
+    e.preventDefault();
 
-    // Obtiene una referencia al botón de registro
     const submitBtn = e.submitter;
-
-    // Deshabilita el botón y cambia su texto para evitar envíos duplicados
     submitBtn.disabled = true;
     submitBtn.textContent = "Registrando...";
 
     if (!db || !userId || !isAuthReady) {
       mostrarAlerta("La aplicación no está lista o el usuario no está autenticado.", "warning");
       console.warn("Intento de registro fallido: Firebase o autenticación no listos.");
-      // Vuelve a habilitar el botón si hay un error inicial
       submitBtn.disabled = false;
       submitBtn.textContent = "Registrar";
       return;
     }
 
-    // Obtiene los valores de los campos del formulario
     const tipo = document.getElementById("tipo").value;
     const fecha = document.getElementById("fecha").value;
     const evento = document.getElementById("evento").value;
-    const usuario = document.getElementById("usuario").value; // Encargado
+    const usuario = document.getElementById("usuario").value;
 
-    const cantidades = document.querySelectorAll(".cantidad"); // Selecciona todos los campos de cantidad
-    const precios = document.querySelectorAll(".precio");     // Selecciona todos los campos de precio
+    const cantidades = document.querySelectorAll(".cantidad");
+    const precios = document.querySelectorAll(".precio");
 
-    let registros = []; // Array para almacenar los registros a enviar
+    let registros = [];
 
-    // Itera sobre los campos de cantidad para recopilar los datos
     cantidades.forEach((input, i) => {
       const cantidad = parseFloat(input.value);
-      // Solo añade el registro si la cantidad es un número válido y mayor que 0
       if (!isNaN(cantidad) && cantidad > 0) {
         const bebida = input.dataset.bebida;
         const precio = parseFloat(precios[i].value);
@@ -262,60 +241,45 @@
           usuario,
           bebida,
           cantidad,
-          precio: isNaN(precio) ? "" : precio, // Si el precio no es un número, se envía vacío
-          timestamp: serverTimestamp() // Añade una marca de tiempo del servidor para ordenar
+          precio: isNaN(precio) ? "" : precio,
+          timestamp: serverTimestamp()
         });
       }
     });
 
-    // Si no se ingresó ninguna bebida, muestra una alerta y detiene la ejecución
     if (registros.length === 0) {
       mostrarAlerta("Ingrese al menos una bebida", "warning");
-      // Vuelve a habilitar el botón si no hay datos
       submitBtn.disabled = false;
       submitBtn.textContent = "Registrar";
       return;
     }
 
     try {
-      // Referencia a la colección donde se guardarán los movimientos
-      const movimientosCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/movimientos`);
+      const movimientosCollectionRef = collection(db, `bebidas`);
 
-      // Envía todos los registros a Firestore en paralelo
       console.log("Enviando registros a Firestore:", registros);
       await Promise.all(registros.map(dato => addDoc(movimientosCollectionRef, dato)));
 
-      mostrarAlerta("¡Registro exitoso!", "success"); // Muestra mensaje de éxito
-      document.getElementById("registroForm").reset(); // Limpia el formulario
-      generarTabla(); // Vuelve a generar la tabla de bebidas
-      // cargarStock() se actualizará automáticamente gracias a onSnapshot
+      mostrarAlerta("¡Registro exitoso!", "success");
+      document.getElementById("registroForm").reset();
+      generarTabla();
       console.log("Registros enviados con éxito.");
-    } catch (error) { // Captura cualquier error en la escritura a Firestore
+    } catch (error) {
       console.error("Error al registrar movimiento en Firestore:", error);
-      mostrarAlerta("Error al registrar: " + error.message, "danger"); // Muestra mensaje de error
+      mostrarAlerta("Error al registrar: " + error.message, "danger");
     } finally {
-      // Vuelve a habilitar el botón de envío en cualquier caso
       submitBtn.disabled = false;
       submitBtn.textContent = "Registrar";
     }
   });
 
-  /**
-   * Muestra una alerta temporal en la parte inferior del formulario.
-   * @param {string} msg - El mensaje a mostrar.
-   * @param {string} tipo - El tipo de alerta (ej. "success", "warning", "danger").
-   */
   function mostrarAlerta(msg, tipo) {
-    alerta.textContent = msg; // Establece el texto del mensaje
-    alerta.className = `alert alert-${tipo}`; // Establece las clases CSS de la alerta
-    alerta.classList.remove("d-none"); // Hace visible la alerta
-    // Oculta la alerta después de 4 segundos
+    alerta.textContent = msg;
+    alerta.className = `alert alert-${tipo}`;
+    alerta.classList.remove("d-none");
     setTimeout(() => alerta.classList.add("d-none"), 4000);
   }
 
-  /**
-   * Carga y muestra el stock actual de bebidas desde Firestore en tiempo real.
-   */
   function cargarStock() {
     if (!db || !userId || !isAuthReady) {
       stockContainer.innerHTML = "<p class='text-muted'>Esperando autenticación para cargar stock...</p>";
@@ -323,11 +287,10 @@
       return;
     }
 
-    stockContainer.innerHTML = "<p class='text-muted'>Cargando stock...</p>"; // Muestra un mensaje de carga
-    const movimientosCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/movimientos`);
+    stockContainer.innerHTML = "<p class='text-muted'>Cargando stock...</p>";
+    const movimientosCollectionRef = collection(db, `bebidas`);
 
     console.log("Configurando listener de stock en tiempo real...");
-    // Escucha cambios en tiempo real en la colección de movimientos
     onSnapshot(movimientosCollectionRef, (snapshot) => {
       let stock = {};
       if (snapshot.empty) {
@@ -351,16 +314,15 @@
         }
       });
 
-      stockContainer.innerHTML = ""; // Limpia el contenido del contenedor de stock
+      stockContainer.innerHTML = "";
       if (Object.keys(stock).length === 0) {
         stockContainer.innerHTML = "<p class='text-center text-info'>No hay stock registrado.</p>";
         console.log("Stock calculado: Vacío.");
         return;
       }
 
-      // Itera sobre las bebidas y muestra su cantidad en el stock
       bebidas.forEach(b => {
-        const cantidad = stock[b] || 0; // Obtiene la cantidad de la bebida, 0 si no existe
+        const cantidad = stock[b] || 0;
         stockContainer.innerHTML += `<div class="stock-item"><strong>${b}</strong><span>${cantidad}</span></div>`;
       });
       console.log("Stock actualizado y mostrado:", stock);
@@ -370,12 +332,9 @@
     });
   }
 
-  /**
-   * Filtra y muestra los registros de movimientos anteriores desde Firestore.
-   */
   async function filtrarRegistros() {
     const tabla = document.getElementById("tablaRegistros");
-    tabla.innerHTML = "<p class='text-center text-muted'>Cargando...</p>"; // Muestra un mensaje de carga
+    tabla.innerHTML = "<p class='text-center text-muted'>Cargando...</p>";
 
     if (!db || !userId || !isAuthReady) {
       tabla.innerHTML = "<p class='text-muted'>Esperando autenticación para filtrar...</p>";
@@ -383,16 +342,14 @@
       return;
     }
 
-    // Obtiene los valores de los filtros
     const filtroFecha = document.getElementById("filtroFecha").value;
     const filtroTipo = document.getElementById("filtroTipo").value;
     const filtroEvento = document.getElementById("filtroEvento").value;
     const filtroBebida = filtroBebidaSelect.value;
 
-    const movimientosCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/movimientos`);
+    const movimientosCollectionRef = collection(db, `bebidas`);
     let q = query(movimientosCollectionRef);
 
-    // Aplica los filtros a la consulta de Firestore
     if (filtroFecha) {
       q = query(q, where("fecha", "==", filtroFecha));
     }
@@ -402,38 +359,29 @@
     if (filtroBebida) {
       q = query(q, where("bebida", "==", filtroBebida));
     }
-    // Para filtro de evento, Firestore no soporta "contains" directamente para strings.
-    // Tendríamos que buscar todos los registros y filtrarlos en el cliente, o usar una búsqueda más avanzada (ej. Algolia)
-    // Por ahora, si filtroEvento está presente, no se aplica un filtro directo en Firestore,
-    // y se filtrará después de obtener los resultados si es necesario.
-    // Si necesitas búsquedas complejas de texto, considera una solución de búsqueda dedicada.
 
     console.log("Aplicando filtros y obteniendo registros...");
     try {
-      const querySnapshot = await getDocs(q); // Obtiene los documentos que coinciden con la consulta
+      const querySnapshot = await getDocs(q);
       let records = [];
       querySnapshot.forEach(doc => {
         let data = doc.data();
-        // Filtrado adicional en el cliente para 'evento' si es necesario
         if (filtroEvento && data.evento && !data.evento.toLowerCase().includes(filtroEvento.toLowerCase())) {
-          return; // Saltar este documento si no coincide con el filtro de evento
+          return;
         }
         records.push(data);
       });
 
-      // Ordenar los registros por fecha (y luego por timestamp si existe)
       records.sort((a, b) => {
         const dateA = new Date(a.fecha);
         const dateB = new Date(b.fecha);
         if (dateA.getTime() !== dateB.getTime()) {
           return dateA.getTime() - dateB.getTime();
         }
-        // Si las fechas son iguales, ordenar por timestamp (si existe)
         const tsA = a.timestamp ? a.timestamp.toDate().getTime() : 0;
         const tsB = b.timestamp ? b.timestamp.toDate().getTime() : 0;
         return tsA - tsB;
       });
-
 
       if (records.length === 0) {
         tabla.innerHTML = "<p class='text-center text-info'>Sin resultados</p>";
@@ -441,16 +389,14 @@
         return;
       }
 
-      // Construye la tabla HTML con los registros filtrados
       let html = `<div class="table-responsive"><table class="table table-bordered text-center align-middle"><thead class="table-dark"><tr><th>Fecha</th><th>Tipo</th><th>Bebida</th><th>Cantidad</th><th>Evento</th><th>Usuario</th><th>Precio</th><th>Total</th></tr></thead><tbody>`;
       records.forEach(r => {
-        // Formatea la fecha si es un objeto Timestamp de Firestore
         const displayFecha = r.fecha instanceof Date ? r.fecha.toISOString().split('T')[0] : r.fecha;
         const total = (r.cantidad && r.precio) ? (parseFloat(r.cantidad) * parseFloat(r.precio)).toFixed(2) : "";
         html += `<tr><td>${displayFecha}</td><td>${r.tipo}</td><td>${r.bebida}</td><td>${r.cantidad}</td><td>${r.evento}</td><td>${r.usuario}</td><td>${r.precio || ''}</td><td>${total}</td></tr>`;
       });
       html += "</tbody></table></div>";
-      tabla.innerHTML = html; // Inserta la tabla en el DOM
+      tabla.innerHTML = html;
       console.log("Registros filtrados mostrados.");
     } catch (error) {
       console.error("Error al filtrar registros de Firestore:", error);
@@ -458,24 +404,19 @@
     }
   }
 
-  /**
-   * Limpia los campos de filtro y la tabla de registros.
-   */
   function limpiarFiltros() {
     document.getElementById("filtroFecha").value = "";
     document.getElementById("filtroTipo").value = "";
     document.getElementById("filtroEvento").value = "";
-    filtroBebidaSelect.value = ""; // Restablece el filtro de bebida
+    filtroBebidaSelect.value = "";
     document.getElementById("tablaRegistros").innerHTML = "<p class='text-muted text-center'>Usa los filtros para ver movimientos anteriores.</p>";
     console.log("Filtros limpiados.");
   }
 
-  // Se ejecuta cuando el DOM ha sido completamente cargado
   document.addEventListener("DOMContentLoaded", () => {
     console.log("DOM Content Loaded. Iniciando Firebase...");
-    initFirebase(); // Inicializa Firebase y la autenticación
-    // La generación de tabla y carga de stock se llaman después de la autenticación
-    document.getElementById("fecha").valueAsDate = new Date(); // Establece la fecha actual
+    initFirebase();
+    document.getElementById("fecha").valueAsDate = new Date();
   });
 </script>
 </body>
