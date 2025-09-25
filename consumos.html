@@ -462,66 +462,52 @@
       const bebida = inputEntero.dataset.bebida;
       const radioSeleccionado = fila.querySelector('input[name="fraccion-' + bebida + '"]:checked');
 
+      // Calcular la cantidad final (Stock Final)
       const cantidadEntera = parseFloat(inputEntero.value) || 0;
       const cantidadFraccion = radioSeleccionado ? parseFloat(radioSeleccionado.value) : 0;
-      const cantidadFinal = cantidadEntera + cantidadFraccion;
+      const cantidadFinal = cantidadEntera + cantidadFraccion; // Esto es el Stock Final ingresado
 
-      if (cantidadFinal > 0) {
-        // Lógica para Sección Salón (se registra el stock final)
-        if (bebidasSalon.includes(bebida)) {
+      // **********************************************
+      // LÓGICA CORREGIDA PARA REGISTRAR CONSUMO
+      // **********************************************
+      if (bebidasSalon.includes(bebida) || bebidasAdulto.includes(bebida)) {
+          
           const stockInicialBebida = stockActual[bebida] || 0;
+          // Calcular el consumo: Stock Inicial - Stock Final
           const consumoCalculado = stockInicialBebida - cantidadFinal;
 
           if (consumoCalculado < 0) {
-            mostrarAlerta(`Error: El stock final de ${bebida} (${cantidadFinal}) es mayor que el stock inicial (${stockInicialBebida}). No se registrará el consumo.`, "danger");
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Registrar";
-            return;
+              // Si el consumo calculado es negativo, el stock final ingresado es mayor que el inicial.
+              mostrarAlerta(`Error: El stock final de ${bebida} (${cantidadFinal}) es mayor que el stock inicial (${stockInicialBebida}). No se registrará el consumo.`, "danger");
+              submitBtn.disabled = false;
+              submitBtn.textContent = "Registrar";
+              return; // Detener el envío de todo el formulario
           }
 
-          registros.push({
-            tipo: "consumo",
-            fecha,
-            bebida,
-            cantidad: consumoCalculado,
-            evento,
-            usuario,
-            timestamp: serverTimestamp()
-          });
-        }
-        // Lógica para Sección Barra (se registra el stock final)
-        else if (bebidasAdulto.includes(bebida)) {
-          const stockInicialBebida = stockActual[bebida] || 0;
-          const consumoCalculado = stockInicialBebida - cantidadFinal;
-
-          if (consumoCalculado < 0) {
-            mostrarAlerta(`Error: El stock final de ${bebida} (${cantidadFinal}) es mayor que el stock inicial (${stockInicialBebida}). No se registrará el consumo.`, "danger");
-            submitBtn.disabled = false;
-            submitBtn.textContent = "Registrar";
-            return;
+          // Solo registramos un movimiento si realmente hubo consumo (consumoCalculado > 0)
+          if (consumoCalculado > 0) {
+              registros.push({
+                  tipo: "consumo",
+                  fecha,
+                  bebida,
+                  cantidad: consumoCalculado,
+                  evento,
+                  usuario,
+                  timestamp: serverTimestamp()
+              });
           }
-
-          registros.push({
-            tipo: "consumo",
-            fecha,
-            bebida,
-            cantidad: consumoCalculado,
-            evento,
-            usuario,
-            timestamp: serverTimestamp()
-          });
-        }
       }
-    }
+    } // Fin del bucle for
 
     if (registros.length === 0) {
-      mostrarAlerta("Debe ingresar al menos una bebida", "warning");
+      mostrarAlerta("No se registraron consumos (stock final = stock inicial para todas las bebidas).", "warning");
       submitBtn.disabled = false;
       submitBtn.textContent = "Registrar";
       return;
     }
 
     try {
+      // Registrar todos los movimientos de consumo
       await Promise.all(registros.map(dato => addDoc(movimientosCollectionRef, dato)));
 
       mostrarAlerta("¡Registro exitoso!", "success");
@@ -543,6 +529,7 @@
    */
   async function obtenerStockActual() {
     const movimientosCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/movimientos`);
+    // Se podría optimizar esta consulta en Firebase, pero se mantiene la lógica original
     const querySnapshot = await getDocs(query(movimientosCollectionRef));
     
     let stock = {};
