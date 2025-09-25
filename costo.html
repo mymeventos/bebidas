@@ -1,259 +1,289 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora de Costos de Eventos</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #e0e0e0;
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-        }
-        .calculator-container {
-            background-color: #ffffff;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            max-width: 900px;
-            width: 100%;
-        }
-        #pdf-content {
-            padding: 20px;
-            background: #fff; /* asegura fondo blanco en PDF */
-        }
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-        }
-        h2 {
-            text-align: left;
-            color: #555;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 5px;
-            margin-top: 40px;
-            margin-bottom: 20px;
-        }
-        .invitados-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        label {
-            font-weight: 600;
-            color: #555;
-        }
-        input[type="number"], input[type="text"], input[type="date"] {
-            width: 100%;
-            padding: 10px 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            font-size: 16px;
-        }
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            table-layout: fixed;
-        }
-        th, td {
-            padding: 15px;
-            border-bottom: 1px solid #e0e0e0;
-            width: 33.33%;
-        }
-        th {
-            background-color: #f2f2f2;
-            font-weight: 700;
-            color: #444;
-        }
-        td#alcohol-persona,
-        td#sin-alcohol-persona,
-        td#comida-persona,
-        td#pasteleria-persona,
-        td#animador-persona,
-        td#sonido-persona,
-        td#mozos-persona,
-        td#bacha-persona,
-        td#barman-persona,
-        td#decoracion-persona,
-        td#varios-persona {
-            color: #28a745;
-            font-weight: 600;
-            text-align: right;
-        }
-        td input[type="number"] {
-            width: 80%;
-            text-align: right;
-            display: block;
-            margin-left: auto;
-        }
-        #resumen-total {
-            background-color: #007bff;
-            color: white;
-            padding: 20px 25px;
-            border-radius: 8px;
-            margin-top: 30px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
-        }
-        #resumen-total p {
-            margin: 0;
-            font-size: 1.2em;
-            line-height: 1.6;
-        }
-        #costo-total, #costo-promedio-persona {
-            font-size: 1.5em;
-            font-weight: bold;
-        }
-        .save-button {
-            display: block;
-            width: 100%;
-            padding: 15px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: background-color 0.3s ease;
-        }
-        .save-button:hover {
-            background-color: #218838;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Costos de Eventos</title>
+
+  <!-- Librerías PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #e0e0e0;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+    .calculator-container {
+      background-color: #ffffff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      max-width: 900px;
+      width: 100%;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
+    h2 {
+      text-align: left;
+      color: #555;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 5px;
+      margin-top: 40px;
+      margin-bottom: 20px;
+    }
+    .invitados-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    label {
+      font-weight: 600;
+      color: #555;
+    }
+    input[type="number"], input[type="text"], input[type="date"] {
+      width: 100%;
+      padding: 10px 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+    }
+    th, td {
+      padding: 15px;
+      border-bottom: 1px solid #e0e0e0;
+      width: 33.33%;
+    }
+    th {
+      background-color: #f2f2f2;
+      font-weight: 700;
+      color: #444;
+    }
+    td.value-cell {
+      color: #28a745;
+      font-weight: 600;
+      text-align: right;
+    }
+    td input[type="number"] {
+      width: 80%;
+      text-align: right;
+      display: block;
+      margin-left: auto;
+    }
+    #resumen-total {
+      background-color: #007bff;
+      color: white;
+      padding: 20px 25px;
+      border-radius: 8px;
+      margin-top: 30px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+    }
+    #resumen-total p {
+      margin: 0;
+      font-size: 1.2em;
+      line-height: 1.6;
+    }
+    #costo-total, #costo-promedio-persona {
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+    .save-button {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background-color 0.3s ease;
+    }
+    .save-button:hover {
+      background-color: #218838;
+    }
+  </style>
 </head>
 <body>
 
-    <div class="calculator-container">
-        <div id="pdf-content">
-            <h1>Calculadora de Costos de Eventos</h1>
+  <div class="calculator-container">
+    <h1>Calculadora de Costos de Eventos</h1>
 
-            <h2>Datos del Evento</h2>
-            <div class="event-details">
-                <div>
-                    <label for="event-title">Título del Evento:</label>
-                    <input type="text" id="event-title" placeholder="Ej: Cumple de Mica">
-                </div>
-                <div>
-                    <label for="event-date">Fecha del Evento:</label>
-                    <input type="date" id="event-date">
-                </div>
-            </div>
-            
-            <div class="invitados-container">
-                <div>
-                    <label for="invitados-adultos">Cantidad de Invitados Adultos:</label>
-                    <input type="number" id="invitados-adultos" value="0" min="0" oninput="calcular()">
-                </div>
-                <div>
-                    <label for="invitados-infantiles">Cantidad de Invitados Infantiles:</label>
-                    <input type="number" id="invitados-infantiles" value="0" min="0" oninput="calcular()">
-                </div>
-            </div>
-
-            <h2>Detalle de Costos</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Ítem</th>
-                        <th>Costo Total ($)</th>
-                        <th>Costo por Persona ($)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr><td>Bebidas alcohólicas</td><td><input type="number" id="alcohol" value="0" min="0" oninput="calcular()"></td><td id="alcohol-persona">0.00</td></tr>
-                    <tr><td>Bebidas sin alcohol</td><td><input type="number" id="sin-alcohol" value="0" min="0" oninput="calcular()"></td><td id="sin-alcohol-persona">0.00</td></tr>
-                    <tr><td>Comida</td><td><input type="number" id="comida" value="0" min="0" oninput="calcular()"></td><td id="comida-persona">0.00</td></tr>
-                    <tr><td>Pastelería</td><td><input type="number" id="pasteleria" value="0" min="0" oninput="calcular()"></td><td id="pasteleria-persona">0.00</td></tr>
-                    <tr><td>Animador</td><td><input type="number" id="animador" value="0" min="0" oninput="calcular()"></td><td id="animador-persona">0.00</td></tr>
-                    <tr><td>Sonido</td><td><input type="number" id="sonido" value="0" min="0" oninput="calcular()"></td><td id="sonido-persona">0.00</td></tr>
-                    <tr><td>Mozos</td><td><input type="number" id="mozos" value="0" min="0" oninput="calcular()"></td><td id="mozos-persona">0.00</td></tr>
-                    <tr><td>Bacha</td><td><input type="number" id="bacha" value="0" min="0" oninput="calcular()"></td><td id="bacha-persona">0.00</td></tr>
-                    <tr><td>Barman</td><td><input type="number" id="barman" value="0" min="0" oninput="calcular()"></td><td id="barman-persona">0.00</td></tr>
-                    <tr><td>Decoración</td><td><input type="number" id="decoracion" value="0" min="0" oninput="calcular()"></td><td id="decoracion-persona">0.00</td></tr>
-                    <tr><td>Varios</td><td><input type="number" id="varios" value="0" min="0" oninput="calcular()"></td><td id="varios-persona">0.00</td></tr>
-                </tbody>
-            </table>
-            
-            <h2>Resumen Final</h2>
-            <div id="resumen-total">
-                <p>Costo Total del Evento: $<span id="costo-total">0.00</span></p>
-                <p>Costo Promedio por Persona: $<span id="costo-promedio-persona">0.00</span></p>
-            </div>
-        </div>
-        
-        <button class="save-button" onclick="guardarEventoPDF()">Descargar Resumen PDF</button>
+    <h2>Datos del Evento</h2>
+    <div class="event-details">
+      <div>
+        <label for="event-title">Título del Evento:</label>
+        <input type="text" id="event-title" placeholder="Ej: Cumple de Mica">
+      </div>
+      <div>
+        <label for="event-date">Fecha del Evento:</label>
+        <input type="date" id="event-date">
+      </div>
+    </div>
+    
+    <div class="invitados-container">
+      <div>
+        <label for="invitados-adultos">Cantidad de Invitados Adultos:</label>
+        <input type="number" id="invitados-adultos" value="0" min="0" oninput="calcular()">
+      </div>
+      <div>
+        <label for="invitados-infantiles">Cantidad de Invitados Infantiles:</label>
+        <input type="number" id="invitados-infantiles" value="0" min="0" oninput="calcular()">
+      </div>
     </div>
 
-    <script>
-        function calcular() {
-            const adultos = parseFloat(document.getElementById('invitados-adultos').value) || 0;
-            const infantiles = parseFloat(document.getElementById('invitados-infantiles').value) || 0;
-            const totalInvitados = adultos + infantiles;
+    <h2>Detalle de Costos</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Ítem</th>
+          <th>Costo Total ($)</th>
+          <th>Costo por Persona ($)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Bebidas</td><td><input type="number" id="bebidas" value="0" min="0" oninput="calcular()"></td><td id="bebidas-persona" class="value-cell">0.00</td></tr>
+        <tr><td>Comida</td><td><input type="number" id="comida" value="0" min="0" oninput="calcular()"></td><td id="comida-persona" class="value-cell">0.00</td></tr>
+        <tr><td>Pastelería</td><td><input type="number" id="pasteleria" value="0" min="0" oninput="calcular()"></td><td id="pasteleria-persona" class="value-cell">0.00</td></tr>
+        <tr><td>Personal fijo</td><td><input type="number" id="personal" value="0" min="0" oninput="calcular()"></td><td id="personal-persona" class="value-cell">0.00</td></tr>
+        <tr><td>Mozos</td><td><input type="number" id="mozos" value="0" min="0" oninput="calcular()"></td><td id="mozos-persona" class="value-cell">0.00</td></tr>
+        <tr><td>Decoración</td><td><input type="number" id="decoracion" value="0" min="0" oninput="calcular()"></td><td id="decoracion-persona" class="value-cell">0.00</td></tr>
+        <tr><td>Varios</td><td><input type="number" id="varios" value="0" min="0" oninput="calcular()"></td><td id="varios-persona" class="value-cell">0.00</td></tr>
+      </tbody>
+    </table>
+    
+    <h2>Resumen Final</h2>
+    <div id="resumen-total">
+      <p>Costo Total del Evento: $<span id="costo-total">0.00</span></p>
+      <p>Costo Promedio por Persona: $<span id="costo-promedio-persona">0.00</span></p>
+    </div>
+    
+    <button class="save-button" onclick="guardarEventoPDF()">Descargar Resumen PDF</button>
+  </div>
 
-            let costoTotalEvento = 0;
-            const items = ['alcohol','sin-alcohol','comida','pasteleria','animador','sonido','mozos','bacha','barman','decoracion','varios'];
-            
-            items.forEach(item => {
-                const costoItem = parseFloat(document.getElementById(item).value) || 0;
-                costoTotalEvento += costoItem;
-                let costoPorPersona = 0;
-                if (item === 'alcohol') {
-                    if (adultos > 0) costoPorPersona = costoItem / adultos;
-                } else {
-                    if (totalInvitados > 0) costoPorPersona = costoItem / totalInvitados;
-                }
-                document.getElementById(`${item}-persona`).textContent = costoPorPersona.toFixed(2);
-            });
-            
-            const costoPromedioPorPersona = totalInvitados > 0 ? costoTotalEvento / totalInvitados : 0;
-            document.getElementById('costo-total').textContent = costoTotalEvento.toFixed(2);
-            document.getElementById('costo-promedio-persona').textContent = costoPromedioPorPersona.toFixed(2);
+  <script>
+    function calcular() {
+      const adultos = parseFloat(document.getElementById('invitados-adultos').value) || 0;
+      const infantiles = parseFloat(document.getElementById('invitados-infantiles').value) || 0;
+      const totalInvitados = adultos + infantiles;
+
+      let costoTotalEvento = 0;
+      const items = ['bebidas','comida','pasteleria','personal','mozos','decoracion','varios'];
+      
+      items.forEach(item => {
+        const costoItem = parseFloat(document.getElementById(item).value) || 0;
+        costoTotalEvento += costoItem;
+
+        let costoPorPersona = 0;
+        if (totalInvitados > 0) costoPorPersona = costoItem / totalInvitados;
+        document.getElementById(`${item}-persona`).textContent = costoPorPersona.toFixed(2);
+      });
+      
+      const costoPromedioPorPersona = totalInvitados > 0 ? costoTotalEvento / totalInvitados : 0;
+      document.getElementById('costo-total').textContent = costoTotalEvento.toFixed(2);
+      document.getElementById('costo-promedio-persona').textContent = costoPromedioPorPersona.toFixed(2);
+    }
+
+    async function guardarEventoPDF() {
+      const titulo = document.getElementById('event-title').value;
+      const fecha = document.getElementById('event-date').value;
+      const adultos = document.getElementById('invitados-adultos').value;
+      const infantiles = document.getElementById('invitados-infantiles').value;
+
+      if (!titulo || !fecha) {
+        alert("Por favor, complete el título y la fecha del evento antes de descargar el PDF.");
+        return;
+      }
+
+      const items = [
+        { nombre: "Bebidas", total: document.getElementById("bebidas").value, persona: document.getElementById("bebidas-persona").textContent },
+        { nombre: "Comida", total: document.getElementById("comida").value, persona: document.getElementById("comida-persona").textContent },
+        { nombre: "Pastelería", total: document.getElementById("pasteleria").value, persona: document.getElementById("pasteleria-persona").textContent },
+        { nombre: "Personal fijo", total: document.getElementById("personal").value, persona: document.getElementById("personal-persona").textContent },
+        { nombre: "Mozos", total: document.getElementById("mozos").value, persona: document.getElementById("mozos-persona").textContent },
+        { nombre: "Decoración", total: document.getElementById("decoracion").value, persona: document.getElementById("decoracion-persona").textContent },
+        { nombre: "Varios", total: document.getElementById("varios").value, persona: document.getElementById("varios-persona").textContent }
+      ];
+
+      const costoTotal = document.getElementById("costo-total").textContent;
+      const costoPromedio = document.getElementById("costo-promedio-persona").textContent;
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      // LOGO - convertí tu logo a Base64 y reemplazá aquí ↓
+      const logoUrl = "Copia de Posteo de Instagram Vertical Nuevo Producto Ceramica Tienda Online Beige (1) (1).png"; 
+      // ⚠️ Reemplazar por ruta absoluta/URL/Base64 cuando lo uses en producción.
+
+      // Título
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(20);
+      pdf.text("Resumen de Costos de Evento", 105, 30, { align: "center" });
+
+      pdf.setFontSize(12);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`Título del evento: ${titulo}`, 20, 50);
+      pdf.text(`Fecha del evento: ${fecha}`, 20, 58);
+      pdf.text(`Invitados adultos: ${adultos}`, 20, 66);
+      pdf.text(`Invitados infantiles: ${infantiles}`, 20, 74);
+
+      // Tabla de costos
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Detalle de Costos", 20, 90);
+
+      const tableColumn = ["Ítem", "Costo Total ($)", "Costo por Persona ($)"];
+      const tableRows = [];
+
+      items.forEach(item => {
+        if (item.total > 0) {
+          tableRows.push([item.nombre, item.total, item.persona]);
         }
+      });
 
-        async function guardarEventoPDF() {
-            const titulo = document.getElementById('event-title').value;
-            const fecha = document.getElementById('event-date').value;
-            if (!titulo || !fecha) {
-                alert('Por favor, complete el título y la fecha del evento antes de descargar el PDF.');
-                return;
-            }
-            const element = document.getElementById('pdf-content');
-            const canvas = await html2canvas(element, { scale: 2, useCORS: true });
-            const imgData = canvas.toDataURL('image/png');
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgProps = pdf.getImageProperties(imgData);
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      pdf.autoTable({
+        startY: 95,
+        head: [tableColumn],
+        body: tableRows,
+        theme: 'grid',
+        styles: { font: "helvetica", fontSize: 11 },
+        headStyles: { fillColor: [0, 123, 255], textColor: 255, halign: "center" },
+        bodyStyles: { halign: "center" },
+        columnStyles: { 0: { halign: "left" } }
+      });
 
-            let heightLeft = pdfHeight;
-            let position = 0;
+      // Resumen final
+      let finalY = pdf.lastAutoTable.finalY + 15;
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("Resumen Final", 20, finalY);
 
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-            heightLeft -= pdf.internal.pageSize.getHeight();
+      pdf.setFontSize(12);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(`Costo Total: $${costoTotal}`, 20, finalY + 10);
+      pdf.text(`Costo Promedio por Persona: $${costoPromedio}`, 20, finalY + 18);
 
-            while (heightLeft > 0) {
-                position = heightLeft - pdfHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-                heightLeft -= pdf.internal.pageSize.getHeight();
-            }
+      pdf.save(`${titulo}_${fecha}.pdf`);
+    }
 
-            pdf.save(`${titulo}_${fecha}.pdf`);
-        }
-
-        calcular();
-    </script>
+    calcular();
+  </script>
 </body>
 </html>
