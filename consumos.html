@@ -62,11 +62,11 @@
 
     <form id="formConsumo">
       <div class="row g-3 mb-3">
-        <div class="col-md-4"><label class="form-label">Fecha</label><input type="date" class="form-control" id="fecha" required /></div>
-        <div class="col-md-5"><label class="form-label">Evento</label><input type="text" class="form-control" id="evento" /></div>
+        <div class="col-md-3"><label class="form-label">Fecha</label><input type="date" class="form-control" id="fecha" required /></div>
+        <div class="col-md-3"><label class="form-label">Evento</label><input type="text" class="form-control" id="evento" /></div>
         <div class="col-md-3"><label class="form-label">Encargado</label><input type="text" class="form-control" id="usuario" /></div>
+        <div class="col-md-3"><label class="form-label">Costo ($)</label><input type="number" class="form-control" id="precioBase" min="0" placeholder="Opcional" /></div>
       </div>
-
       <div class="mb-4 text-center">
           <label class="form-label d-block">Modo de Ingreso:</label>
           <div class="btn-group" role="group">
@@ -116,14 +116,13 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
 <script type="module">
-  // Importaciones de Firebase SDK
+  // Importaciones de Firebase SDK (SE AÑADEN 'where', 'orderBy', 'limit')
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
   import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-  import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-  // Variables globales proporcionadas por el entorno de Canvas
+  // Variables y Configuración de Firebase
   const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-  // Configuración de Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyCfYVuYB0azsjXohRlpt47rvIJWX31YnVg",
     authDomain: "bebidas-f2e09.firebaseapp.com",
@@ -133,37 +132,30 @@
     appId: "1:3759804003:web:a6fc813d925c681c597256",
     measurementId: "G-JZQG7XKRJC"
   };
-  const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-  // Inicialización de Firebase
+  
   let app;
   let db;
   let auth;
   let userId = null;
-
-  // NUEVA VARIABLE GLOBAL PARA EL MODO DE INGRESO
   let currentMode = 'stock'; 
 
-  // Lista de bebidas disponibles
+  // Listas de bebidas (se mantienen igual)
   const bebidasSalon = ["Coca","Coca Zero","Sprite","Sprite Zero","Fanta","Fanta Zero","Agua","Agua Tónica","Soda", "Jugo de naranja", "Pulpa de frutilla", "Pulpa de melon", "Vino Tinto","Vino Blanco","Champagne","Sidra","Cerveza","Cerveza sin Alcohol","Rutini","Trumpeter","Nicasia","Nicasia Viognier","Tardio","Sidra sin alcohol","Anana fizz", "pulpa arandano", "pulpa frambuesa", "pulpa durazno", "alambrado malbec", "santa julia cuve"];
   const bebidasAdulto = ["Gancia","Ron","Ron especial","Carpano rosso","Campari","Vodka","Aperol","Piña colada","Licor de Frutilla","Licor de chocolate","Licor de menta","Blue Curacao","Gin","Fernet", "Whisky","Minerva"];
   const bebidas = [...bebidasSalon, ...bebidasAdulto];
   
 
-  // Referencias a elementos del DOM de la aplicación principal
+  // Referencias a elementos del DOM
   const appContent = document.getElementById("appContent");
   const tbody = document.getElementById("tablaConsumo");
   const alerta = document.getElementById("alerta");
   const currentUserIdDisplay = document.getElementById("currentUserIdDisplay"); 
   const logoutBtn = document.getElementById("logoutBtn");
   const submitBtn = document.getElementById("submitBtn"); 
-
-  // NUEVAS REFERENCIAS PARA EL SELECTOR DE MODO
   const cantidadHeader = document.getElementById("cantidadHeader");
   const modeStock = document.getElementById("modeStock");
   const modeConsumo = document.getElementById("modeConsumo");
 
-  // Referencias a elementos del DOM de autenticación
   const authContainer = document.getElementById("authContainer");
   const emailInput = document.getElementById("emailInput");
   const passwordInput = document.getElementById("passwordInput");
@@ -189,6 +181,8 @@
       document.body.classList.remove("bg-success-flash");
     }, 4000);
   }
+
+  // Se mantienen las funciones initFirebase, signUpBtn, signInBtn, logoutBtn, generarFilas
 
   /**
    * Inicializa Firebase y configura el listener de autenticación.
@@ -231,21 +225,21 @@
       generarFilas();
   });
 
-  /**
-   * Genera dinámicamente las filas de la tabla de consumo con campos de entrada para cada bebida.
-   */
+  // Funciones de Autenticación
+  signUpBtn.addEventListener('click', async () => { /* ... */ });
+  signInBtn.addEventListener('click', async () => { /* ... */ });
+  logoutBtn.addEventListener('click', async () => { /* ... */ });
+  
+  // Función para generar filas (se mantiene igual)
   function generarFilas() {
-    // 1. Actualizar la etiqueta del encabezado de la tabla según el modo
     if (currentMode === 'stock') {
         cantidadHeader.textContent = "Cantidad (Stock Final)";
     } else {
         cantidadHeader.textContent = "Cantidad (Consumo Directo)";
     }
-
-    // 2. Generar filas (se mantiene la estructura de inputs)
     tbody.innerHTML = "";
+    // Código para generar filas (omito por brevedad, se mantiene igual)
     
-    // Sección Salón (se registra el stock final/consumo)
     tbody.innerHTML += `<tr><td colspan="2" class="seccion-separador">Sección Salón</td></tr>`;
     bebidasSalon.forEach(b => {
       const inputCantidad = `<input type="number" class="form-control cantidad-entero" data-bebida="${b}" min="0" value="0" style="width: 90px; display: inline-block;">`;
@@ -273,7 +267,6 @@
       </tr>`;
     });
 
-    // Sección Barra (se registra el stock final/consumo)
     tbody.innerHTML += `<tr><td colspan="2" class="barra-separador">Sección Barra</td></tr>`;
     bebidasAdulto.forEach(b => {
       const inputCantidad = `<input type="number" class="form-control cantidad-entero" data-bebida="${b}" min="0" value="0" style="width: 90px; display: inline-block;">`;
@@ -313,6 +306,34 @@
     }
   });
 
+  /**
+   * NUEVA FUNCIÓN: Busca el último precio de compra registrado para una bebida específica.
+   */
+  async function obtenerUltimoPrecio(bebida) {
+    if (!db || !userId) return 0;
+
+    const movimientosCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/movimientos`);
+
+    const q = query(
+        movimientosCollectionRef,
+        where("tipo", "==", "compra"),
+        where("bebida", "==", bebida),
+        orderBy("timestamp", "desc"), 
+        limit(1)
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+        const data = querySnapshot.docs[0].data();
+        // Devuelve el precio si existe en el documento de compra
+        return parseFloat(data.precio) || 0; 
+    }
+
+    return 0; // Si no se encuentra ningún precio de compra
+  }
+
+
   document.getElementById("formConsumo").addEventListener("submit", async e => {
     e.preventDefault();
 
@@ -329,12 +350,15 @@
     const fecha = document.getElementById("fecha").value;
     const evento = document.getElementById("evento").value;
     const usuario = document.getElementById("usuario").value;
+    
+    // Obtener el precio base ingresado, 0 si está vacío
+    const precioBaseInput = document.getElementById("precioBase").value;
+    const precioBase = parseFloat(precioBaseInput) || 0; 
 
     const filas = tbody.querySelectorAll("tr:not(.seccion-separador)");
     let registros = [];
     const movimientosCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/movimientos`);
 
-    // SOLO obtener el stock actual si estamos en modo "Stock Final"
     const stockActual = currentMode === 'stock' ? await obtenerStockActual() : {};
 
     for (const fila of filas) {
@@ -344,7 +368,6 @@
       const bebida = inputEntero.dataset.bebida;
       const radioSeleccionado = fila.querySelector('input[name="fraccion-' + bebida + '"]:checked');
 
-      // Calcular la cantidad total ingresada (ya sea Stock Final o Consumo Directo)
       const cantidadEntera = parseFloat(inputEntero.value) || 0;
       const cantidadFraccion = radioSeleccionado ? parseFloat(radioSeleccionado.value) : 0;
       const cantidadTotalIngresada = cantidadEntera + cantidadFraccion; 
@@ -354,9 +377,6 @@
           let cantidadARegistrar = 0;
 
           if (currentMode === 'stock') {
-              // **********************************************
-              // MODO 1: STOCK FINAL (Calcula el consumo)
-              // **********************************************
               const stockInicialBebida = stockActual[bebida] || 0;
               cantidadARegistrar = stockInicialBebida - cantidadTotalIngresada; 
 
@@ -364,19 +384,26 @@
                   mostrarAlerta(`Error: El stock final de ${bebida} (${cantidadTotalIngresada}) es mayor que el stock inicial (${stockInicialBebida}). No se registrará el consumo.`, "danger");
                   submitBtn.disabled = false;
                   submitBtn.textContent = "Registrar";
-                  return; // Detener el envío de todo el formulario
+                  return; 
               }
 
           } else {
-              // **********************************************
-              // MODO 2: CONSUMO DIRECTO (Registra la cantidad ingresada)
-              // **********************************************
               cantidadARegistrar = cantidadTotalIngresada;
           }
 
 
-          // Solo registrar si la cantidad a registrar es positiva
           if (cantidadARegistrar > 0) {
+              
+              let precioUnitario = precioBase; // Usamos el precio ingresado en el campo "Costo ($)"
+
+              // Si el usuario NO ingresó un precio (es 0), buscamos el último de la BD
+              if (precioBase === 0) {
+                  precioUnitario = await obtenerUltimoPrecio(bebida); 
+                  if (precioUnitario === 0) {
+                      console.warn(`Advertencia: No se encontró precio de compra para ${bebida}. Se registrará con precio 0.`);
+                  }
+              }
+
               registros.push({
                   tipo: "consumo",
                   fecha,
@@ -384,11 +411,12 @@
                   cantidad: cantidadARegistrar,
                   evento,
                   usuario,
+                  precio: precioUnitario, // <-- AÑADIMOS EL PRECIO DETERMINADO
                   timestamp: serverTimestamp()
               });
           }
       }
-    } // Fin del bucle for
+    } 
 
     if (registros.length === 0) {
       mostrarAlerta("No se registraron movimientos. La cantidad ingresada fue cero para todas las bebidas.", "warning");
@@ -402,7 +430,7 @@
 
       mostrarAlerta("¡Registro exitoso!", "success");
       document.getElementById("formConsumo").reset();
-      generarFilas(); // Refresca el encabezado y limpia la tabla
+      generarFilas(); 
     } catch (error) {
       console.error("Error al registrar en Firestore:", error);
       mostrarAlerta("Error al registrar: " + error.message, "danger");
@@ -412,17 +440,8 @@
     }
   });
 
-  // ... (Las funciones de autenticación y obtenerStockActual() se mantienen sin cambios) ...
-
-  // Maneja el registro de un nuevo usuario con email y contraseña.
-  signUpBtn.addEventListener('click', async () => { /* ... (código) ... */ });
-  // Maneja el inicio de sesión de un usuario existente con email y contraseña.
-  signInBtn.addEventListener('click', async () => { /* ... (código) ... */ });
-  // Maneja el cierre de sesión del usuario.
-  logoutBtn.addEventListener('click', async () => { /* ... (código) ... */ });
-
   /**
-   * Función para obtener el stock actual de todas las bebidas de una sola vez.
+   * Función para obtener el stock actual de todas las bebidas de una sola vez. (Se mantiene igual)
    */
   async function obtenerStockActual() {
     const movimientosCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/movimientos`);
